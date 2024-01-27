@@ -5,10 +5,12 @@ import { getServerAuthSession } from "~/server/auth";
 import { api } from "~/trpc/server";
 import { buttonVariants } from "~/components/ui/button";
 import { MaxWidthWrapper } from "~/components/max-width-wrapper";
+import Image from "next/image";
 
 const Home = async () => {
   noStore();
-  const hello = await api.post.hello.query({ text: "from tRPC" });
+  const hello = await api.test.hello.query({ text: "from tRPC" });
+  const games = await api.games.getGames.query();
   const session = await getServerAuthSession();
 
   return (
@@ -28,6 +30,16 @@ const Home = async () => {
             {session ? "Sign out" : "Sign in"}
           </Link>
         </div>
+        {games.results.map(({ background_image }, i) => (
+          <Image
+            key={i}
+            src={background_image}
+            alt="test"
+            width="500"
+            height="500"
+          />
+        ))}
+        <pre className="w-full text-left">{JSON.stringify(games, null, 2)}</pre>
       </div>
     </MaxWidthWrapper>
   );
