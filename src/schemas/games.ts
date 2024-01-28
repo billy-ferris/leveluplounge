@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const parentPlatformNameEnum = z.enum(["PC", "Playstation", "Xbox"]);
+const parentPlatformSlugEnum = z.enum(["pc", "playstation", "xbox"]);
+
 const ratingSchema = z.object({
   id: z.number(),
   title: z.string(),
@@ -65,7 +68,15 @@ const shortScreenshotSchema = z.object({
   image: z.string(),
 });
 
-const gameSchema = z.object({
+const parentPlatformsSchema = z.object({
+  platform: z.object({
+    id: z.number(),
+    name: z.string(parentPlatformNameEnum),
+    slug: z.string(parentPlatformSlugEnum),
+  }),
+});
+
+export const gameSchema = z.object({
   id: z.number(),
   slug: z.string(),
   name: z.string(),
@@ -95,15 +106,7 @@ const gameSchema = z.object({
   saturated_color: z.string(),
   dominant_color: z.string(),
   platforms: z.array(platformSchema),
-  parent_platforms: z.array(
-    z.object({
-      platform: z.object({
-        id: z.number(),
-        name: z.string(),
-        slug: z.string(),
-      }),
-    }),
-  ),
+  parent_platforms: z.array(parentPlatformsSchema),
   genres: z.array(
     z.object({
       id: z.number(),
@@ -120,11 +123,9 @@ const gameSchema = z.object({
   short_screenshots: z.array(shortScreenshotSchema),
 });
 
-const gamesResponseSchema = z.object({
+export const gamesResponseSchema = z.object({
   count: z.number(),
   next: z.string().nullable(),
   previous: z.string().nullable(),
   results: z.array(gameSchema),
 });
-
-export { gamesResponseSchema };

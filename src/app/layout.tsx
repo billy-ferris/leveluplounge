@@ -4,6 +4,8 @@ import { Inter } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { Sidebar } from "~/components/sidebar";
+import { collections } from "~/data";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -12,15 +14,19 @@ const inter = Inter({
 
 const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en" className="h-full">
-    <body
-      className={cn("relative h-full font-sans antialiased", inter.variable)}
-    >
-      <main className="relative flex min-h-screen flex-col">
-        <TRPCReactProvider>
+    <TRPCReactProvider>
+      <body
+        className={cn(
+          "relative grid h-full min-h-screen overflow-hidden font-sans antialiased lg:grid-cols-6",
+          inter.variable,
+        )}
+      >
+        <Sidebar playlists={collections} className="hidden lg:block" />
+        <main className="relative col-span-4 flex min-h-screen flex-col lg:col-span-5 lg:border-l">
           <div className="flex-1 flex-grow">{children}</div>
-        </TRPCReactProvider>
-      </main>
-    </body>
+        </main>
+      </body>
+    </TRPCReactProvider>
   </html>
 );
 

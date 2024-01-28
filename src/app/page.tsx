@@ -1,47 +1,71 @@
 import { unstable_noStore as noStore } from "next/cache";
-import Link from "next/link";
 
-import { getServerAuthSession } from "~/server/auth";
 import { api } from "~/trpc/server";
-import { buttonVariants } from "~/components/ui/button";
-import { MaxWidthWrapper } from "~/components/max-width-wrapper";
-import Image from "next/image";
+import { GameArtwork } from "~/components/game-artwork";
+import { Separator } from "~/components/ui/separator";
+import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
 const Home = async () => {
   noStore();
-  const hello = await api.test.hello.query({ text: "from tRPC" });
-  const games = await api.games.getGames.query();
-  const session = await getServerAuthSession();
+  const trendingGames = await api.games.getTrendingGames.query();
+  const recentGames = await api.games.getRecentGames.query();
 
   return (
-    <MaxWidthWrapper>
-      <div className="mx-auto flex max-w-3xl flex-col items-center py-20 text-center">
-        <h3 className="sm:text text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-          {hello ? hello.greeting : "Loading tRPC query..."}
-        </h3>
-        <p className="sm:text text-muted-foreground mt-6 text-2xl sm:text-2xl">
-          {session && <span>Logged in as {session.user?.name}</span>}
-        </p>
-        <div className="mt-6 flex flex-col gap-4 sm:flex-row">
-          <Link
-            href={session ? "/api/auth/signout" : "/api/auth/signin"}
-            className={buttonVariants()}
-          >
-            {session ? "Sign out" : "Sign in"}
-          </Link>
+    <div className="h-full px-4 py-6 lg:px-8">
+      <div className="flex items-center justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Top Trending
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Based on player counts and release date. Updated daily.
+          </p>
         </div>
-        {games.results.map(({ background_image }, i) => (
-          <Image
-            key={i}
-            src={background_image}
-            alt="test"
-            width="500"
-            height="500"
-          />
-        ))}
-        <pre className="w-full text-left">{JSON.stringify(games, null, 2)}</pre>
       </div>
-    </MaxWidthWrapper>
+      <Separator className="my-4" />
+      <div className="relative">
+        <ScrollArea>
+          <div className="flex space-x-4 pb-4">
+            {trendingGames.results.map((game) => (
+              <GameArtwork
+                key={game.name}
+                game={game}
+                width={250}
+                height={140}
+              />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+
+      <div className="mt-6 flex items-center justify-between">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight">
+            New Releases
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Recently released games on all platforms. Updated daily.
+          </p>
+        </div>
+      </div>
+      <Separator className="my-4" />
+      <div className="relative">
+        <ScrollArea>
+          <div className="flex space-x-4 pb-4">
+            {recentGames.results.map((game) => (
+              <GameArtwork
+                key={game.name}
+                game={game}
+                width={250}
+                height={140}
+              />
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </div>
+    </div>
   );
 };
 
