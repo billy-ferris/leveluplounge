@@ -1,14 +1,12 @@
-import { unstable_noStore as noStore } from "next/cache";
-
 import { api } from "~/trpc/server";
 import { GameArtwork } from "~/components/game-artwork";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
-const Home = async () => {
-  noStore();
+const Page = async () => {
   const trendingGames = await api.games.getTrendingGames.query();
   const recentGames = await api.games.getRecentGames.query();
+  // const test = await api.games.updateDb.query();
 
   return (
     <div className="h-full px-4 py-6 lg:px-8">
@@ -26,14 +24,17 @@ const Home = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {trendingGames.results.map((game) => (
-              <GameArtwork
-                key={game.name}
-                game={game}
-                width={250}
-                height={140}
-              />
-            ))}
+            {trendingGames.results.map(
+              ({ id, name, released, background_image }) => (
+                <GameArtwork
+                  id={id}
+                  key={id}
+                  name={name}
+                  releaseDate={released}
+                  artworkUrl={background_image}
+                />
+              ),
+            )}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -53,14 +54,17 @@ const Home = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {recentGames.results.map((game) => (
-              <GameArtwork
-                key={game.name}
-                game={game}
-                width={250}
-                height={140}
-              />
-            ))}
+            {recentGames.results.map(
+              ({ id, name, released, background_image }) => (
+                <GameArtwork
+                  key={id}
+                  id={id}
+                  name={name}
+                  releaseDate={released}
+                  artworkUrl={background_image}
+                />
+              ),
+            )}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>
@@ -69,4 +73,4 @@ const Home = async () => {
   );
 };
 
-export default Home;
+export default Page;

@@ -1,8 +1,11 @@
 import { Client } from "@planetscale/database";
 import { drizzle } from "drizzle-orm/planetscale-serverless";
+import { mysqlTableCreator } from "drizzle-orm/mysql-core";
 
 import { env } from "~/env";
 import * as schema from "./schema";
+
+export const mysqlTable = mysqlTableCreator((name) => `leveluplounge_${name}`);
 
 export const db = drizzle(
   new Client({

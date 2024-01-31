@@ -14,6 +14,16 @@ const config = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // Basic redirect
+      {
+        source: "/",
+        destination: "/all-games",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default config;
