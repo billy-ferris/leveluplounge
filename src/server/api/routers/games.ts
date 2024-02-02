@@ -8,8 +8,8 @@ import {
 import { env } from "~/env";
 import type { gamesResponseSchema } from "~/schemas/games";
 import { db } from "~/server/db";
-import { games, usersToGames } from "~/server/db/schema";
-import { sql } from "drizzle-orm";
+import { games, gameStatuses, usersToGames } from "~/server/db/schema";
+import { and, eq, sql } from "drizzle-orm";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 
@@ -82,6 +82,7 @@ export const gamesRouter = createTRPCRouter({
     .input(
       z.object({
         gameId: z.number().positive(),
+        status: z.enum(gameStatuses).nullable().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -89,9 +90,29 @@ export const gamesRouter = createTRPCRouter({
 
       return ctx.db
         .insert(usersToGames)
-        .values({ userId: user.id, gameId: input.gameId })
+        .values({ userId: user.id, gameId: input.gameId, status: input.status })
         .onDuplicateKeyUpdate({
-          set: { userId: sql`user_id`, gameId: sql`game_id` },
+          set: {
+            status: input.status ?? null,
+          },
         });
+    }),
+  deleteGameFromUser: protectedProcedure
+    .input(
+      z.object({
+        gameId: z.number().positive(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { user } = ctx.session;
+
+      return ctx.db
+        .delete(usersToGames)
+        .where(
+          and(
+            eq(usersToGames.gameId, input.gameId),
+            eq(usersToGames.userId, user.id),
+          ),
+        );
     }),
 });

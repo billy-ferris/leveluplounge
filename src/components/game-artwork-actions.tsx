@@ -1,75 +1,157 @@
 "use client";
 
-import { toast } from "sonner";
-
 import { Button } from "~/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { ExpandIcon, GiftIcon, PlusIcon } from "lucide-react";
 import { api } from "~/trpc/react";
-import { type Session } from "next-auth";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import type { gameStatuses } from "~/server/db/schema";
+import type { Session } from "next-auth";
+import { cn } from "~/lib/utils";
+import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+
+type GameStatus = (typeof gameStatuses)[number];
 
 interface GameArtworkActionsProps {
-  session: Session | null;
-  gameId: number;
+  id: number;
   usersGames:
     | {
         gameId: number;
         userId: string;
-        status:
-          | "Wishlist"
-          | "Backlog"
-          | "Playing"
-          | "Paused"
-          | "Beaten"
-          | "Quit"
-          | null;
+        status: GameStatus | null;
       }[]
     | [];
+  session: Session | null;
 }
 
 export const GameArtworkActions = ({
-  session,
-  gameId,
+  id,
   usersGames,
+  session,
 }: GameArtworkActionsProps) => {
   const addGameToUserMutation = api.games.addGameToUser.useMutation();
+  const deleteGameFromUserMutation = api.games.deleteGameFromUser.useMutation();
   const router = useRouter();
 
+  const isGameSaved = isUserGame(usersGames, session?.user.id);
+  const isGameWishlisted = isUserGameWishlisted(usersGames, session?.user.id);
+
+  const handleAddGameClick = () => {
+    addGameToUserMutation.mutate(
+      { gameId: id },
+      handleMutationSuccess("Game added to your library.", router, () =>
+        deleteGameFromUserMutation.mutate(
+          { gameId: id },
+          {
+            onSuccess: () => router.refresh(),
+          },
+        ),
+      ),
+    );
+  };
+
+  const handleWishlistClick = () => {
+    const status = isGameWishlisted ? null : "Wishlist";
+    isGameWishlisted
+      ? deleteGameFromUserMutation.mutate(
+          { gameId: id },
+          handleMutationSuccess(
+            `Game ${status ? "added to" : "removed from"} your wishlist.`,
+            router,
+            () =>
+              addGameToUserMutation.mutate(
+                { gameId: id, status: "Wishlist" },
+                {
+                  onSuccess: () => router.refresh(),
+                },
+              ),
+          ),
+        )
+      : addGameToUserMutation.mutate(
+          { gameId: id, status },
+          handleMutationSuccess(
+            `Game ${status ? "added to" : "removed from"} your wishlist.`,
+            router,
+            () =>
+              deleteGameFromUserMutation.mutate(
+                { gameId: id },
+                {
+                  onSuccess: () => router.refresh(),
+                },
+              ),
+          ),
+        );
+  };
+
+  const handleExpandClick = () => {
+    // Handle expand button click
+  };
+
   return (
-    <>
+    <div className="flex justify-between text-xs text-muted-foreground">
+      <div className="flex gap-x-1">
+        <Button
+          onClick={handleAddGameClick}
+          variant="secondary"
+          size="icon"
+          className={cn("h-6 w-6", isGameSaved && "bg-yellow-900")}
+        >
+          <PlusIcon className="h-3 w-3" />
+        </Button>
+        <Button
+          onClick={handleWishlistClick}
+          variant="secondary"
+          size="icon"
+          className={cn("h-6 w-6", isGameWishlisted && "bg-green-900")}
+        >
+          <GiftIcon className="h-3 w-3" />
+        </Button>
+      </div>
       <Button
-        onClick={() =>
-          addGameToUserMutation.mutate(
-            { gameId },
-            {
-              onSuccess: () => {
-                toast.success("Game added to your library.", {
-                  action: {
-                    label: "Undo",
-                    onClick: () => console.log("Undo"),
-                  },
-                });
-                router.refresh();
-              },
-            },
-          )
-        }
-        disabled={isUserGame(usersGames, session?.user.id)}
-        variant="link"
-        className="absolute left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2 transform opacity-0 transition-all duration-200 hover:scale-105 disabled:opacity-0 group-hover:opacity-100 disabled:group-hover:opacity-40"
+        onClick={handleExpandClick}
+        variant="outline"
+        size="icon"
+        className="h-6 w-6"
       >
-        <PlusCircle className="h-10 w-10 text-white opacity-60 transition-all hover:opacity-100" />
+        <ExpandIcon className="h-3 w-3" />
       </Button>
-      <div className="absolute inset-0 z-40 bg-black opacity-0 transition-opacity duration-200 group-hover:opacity-60"></div>
-    </>
+    </div>
   );
 };
 
 const isUserGame = (
   usersGames: GameArtworkActionsProps["usersGames"],
   userId: string | undefined,
-): boolean => {
-  return userId
-    ? usersGames.some((userGame) => userGame.userId === userId)
+): boolean =>
+  userId
+    ? usersGames.some(
+        (userGame) =>
+          userGame.userId === userId && userGame.status !== "Wishlist",
+      )
     : true;
-};
+
+const isUserGameWishlisted = (
+  usersGames: GameArtworkActionsProps["usersGames"],
+  userId: string | undefined,
+): boolean =>
+  !!userId &&
+  usersGames.some(
+    (userGame) => userGame.userId === userId && userGame.status === "Wishlist",
+  );
+
+const handleMutationSuccess = (
+  successMessage: string,
+  router: AppRouterInstance,
+  undoAction: () => void,
+) => ({
+  onSuccess: () => {
+    toast.success(successMessage, {
+      action: {
+        label: "Undo",
+        onClick: undoAction,
+      },
+    });
+
+    router.refresh();
+  },
+});

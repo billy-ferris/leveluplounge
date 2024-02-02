@@ -5,7 +5,6 @@ import { api } from "~/trpc/server";
 
 const Page = async () => {
   const allGames = await api.games.allGames.query();
-  console.log({ games: JSON.stringify(allGames, null, 2) });
 
   return (
     <div className=" h-full px-4 py-6 lg:px-8">

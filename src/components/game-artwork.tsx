@@ -7,8 +7,13 @@ import {
   XboxIcon,
 } from "~/components/icons/platforms";
 import { parentPlatformNameEnum } from "~/schemas/games";
-import { GameArtworkActions } from "~/components/game-artwork-actions";
 import { getServerAuthSession } from "~/server/auth";
+import type { gameStatuses } from "~/server/db/schema";
+import { ExpandIcon, GiftIcon, PlusIcon } from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { GameArtworkActions } from "~/components/game-artwork-actions";
+
+type GameStatus = (typeof gameStatuses)[number];
 
 interface GameArtworkProps {
   id: number;
@@ -17,14 +22,7 @@ interface GameArtworkProps {
     | {
         gameId: number;
         userId: string;
-        status:
-          | "Wishlist"
-          | "Backlog"
-          | "Playing"
-          | "Paused"
-          | "Beaten"
-          | "Quit"
-          | null;
+        status: GameStatus | null;
       }[]
     | [];
   artworkUrl: string;
@@ -35,7 +33,6 @@ export const GameArtwork = async ({
   usersGames,
   name,
   artworkUrl,
-  releaseDate,
 }: GameArtworkProps) => {
   const session = await getServerAuthSession();
   // const parentPlatforms = game.parent_platforms.map(
@@ -48,13 +45,6 @@ export const GameArtwork = async ({
         className={`group relative h-[180px] w-[300px] overflow-hidden rounded-t-md`}
       >
         {/*<PlatformsList platforms={parentPlatforms} />*/}
-        {usersGames && (
-          <GameArtworkActions
-            session={session}
-            usersGames={usersGames}
-            gameId={id}
-          />
-        )}
         <Image
           src={artworkUrl}
           alt={name}
@@ -67,18 +57,13 @@ export const GameArtwork = async ({
         <h3 className="... truncate text-ellipsis font-medium leading-5">
           {name}
         </h3>
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <Link href="/developer" className="underline hover:no-underline">
-            Developer
-          </Link>
-          <p>
-            {new Date(releaseDate).toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })}
-          </p>
-        </div>
+        {usersGames && (
+          <GameArtworkActions
+            id={id}
+            usersGames={usersGames}
+            session={session}
+          />
+        )}
       </div>
     </div>
   );
