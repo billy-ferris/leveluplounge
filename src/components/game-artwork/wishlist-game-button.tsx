@@ -73,7 +73,11 @@ export const WishlistGameButton: FC<WishlistGameButtonProps> = ({
       onClick={handleOnClick}
       variant="secondary"
       size="icon"
-      className={cn("h-6 w-6", isGameWishlisted && "bg-green-900", className)}
+      className={cn(
+        "h-6 w-6",
+        isGameWishlisted && "bg-green-800 hover:bg-green-900",
+        className,
+      )}
     >
       {isLoading ? (
         <Loader2Icon className="h-3 w-3 animate-spin opacity-60" />
@@ -84,7 +88,7 @@ export const WishlistGameButton: FC<WishlistGameButtonProps> = ({
   );
 };
 
-export const handleMutationSuccess = (
+const handleMutationSuccess = (
   successMessage: string,
   router: AppRouterInstance,
   undoAction: () => void,

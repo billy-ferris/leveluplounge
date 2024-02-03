@@ -4,62 +4,105 @@ import { type FC, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-import { PlusIcon, Loader2Icon } from "lucide-react";
+import { PlusIcon, Loader2Icon, CheckIcon, SquarePenIcon } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { gameStatuses } from "~/server/db/schema";
+
+type GameStatus = (typeof gameStatuses)[number] | null;
 
 interface AddGameButtonProps
   extends Pick<React.HTMLAttributes<HTMLDivElement>, "className"> {
   id: number;
   isGameSaved: boolean;
+  status?: GameStatus;
 }
 
 export const AddGameButton: FC<AddGameButtonProps> = ({
   id,
   isGameSaved,
+  status: currentStatus,
   className,
 }) => {
   const addGameToUserMutation = api.games.addGameToUser.useMutation();
   const deleteGameFromUserMutation = api.games.deleteGameFromUser.useMutation();
   const router = useRouter();
 
-  const handleOnClick = useCallback(() => {
-    addGameToUserMutation.mutate(
-      { gameId: id },
-      handleMutationSuccess("Game added to your library.", router, () =>
-        deleteGameFromUserMutation.mutate(
-          { gameId: id },
-          {
-            onSuccess: () => router.refresh(), // TODO: is there a better way to update in real-time? ISR?
-          },
+  const handleOnClick = useCallback(
+    (status: GameStatus) => {
+      addGameToUserMutation.mutate(
+        { gameId: id, status },
+        handleMutationSuccess("Game added to your library.", router, () =>
+          deleteGameFromUserMutation.mutate(
+            { gameId: id },
+            {
+              onSuccess: () => router.refresh(), // TODO: is there a better way to update in real-time? ISR?
+            },
+          ),
         ),
-      ),
-    );
-  }, [id, addGameToUserMutation, deleteGameFromUserMutation, router]);
+      );
+    },
+    [id, addGameToUserMutation, deleteGameFromUserMutation, router],
+  );
 
   const isLoading =
     addGameToUserMutation.isLoading || deleteGameFromUserMutation.isLoading;
 
   return (
-    <Button
-      onClick={handleOnClick}
-      variant="secondary"
-      size="icon"
-      className={cn("h-6 w-6", isGameSaved && "bg-yellow-900", className)}
-    >
-      {isLoading ? (
-        <Loader2Icon className="h-3 w-3 animate-spin opacity-60" />
-      ) : (
-        <PlusIcon className="h-3 w-3" />
-      )}
-    </Button>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          // onClick={handleOnClick}
+          variant="secondary"
+          size="icon"
+          className={cn(
+            "h-6 w-6",
+            isGameSaved && "bg-green-800 hover:bg-green-900",
+            className,
+          )}
+        >
+          {isLoading ? (
+            <Loader2Icon className="h-3 w-3 animate-spin opacity-60" />
+          ) : isGameSaved ? (
+            <SquarePenIcon className="h-3 w-3" />
+          ) : (
+            <PlusIcon className="h-3 w-3" />
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[140px] overflow-hidden p-1 text-foreground">
+        {gameStatuses
+          .filter((option) => option !== "Wishlist")
+          .map((option) => {
+            const isSelected = currentStatus === option;
+
+            return (
+              <Button
+                key={option}
+                onClick={() => handleOnClick(option)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-full justify-between px-2 py-1.5"
+              >
+                {option}
+                {isSelected && <CheckIcon className="h-3 w-3" />}
+              </Button>
+            );
+          })}
+      </PopoverContent>
+    </Popover>
   );
 };
 
-export const handleMutationSuccess = (
+const handleMutationSuccess = (
   successMessage: string,
   router: AppRouterInstance,
   undoAction: () => void,

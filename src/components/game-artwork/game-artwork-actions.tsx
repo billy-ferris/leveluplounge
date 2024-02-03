@@ -6,8 +6,6 @@ import { ExpandIcon } from "lucide-react";
 import { Button } from "~/components/ui/button";
 import type { gameStatuses } from "~/server/db/schema";
 import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { toast } from "sonner";
 
 type GameStatus = (typeof gameStatuses)[number];
 
@@ -30,11 +28,16 @@ export const GameArtworkActions: FC<GameArtworkActionsProps> = ({
 }) => {
   const isGameSaved = isUserGame(usersGames, session?.user.id);
   const isGameWishlisted = isUserGameWishlisted(usersGames, session?.user.id);
+  const gameStatus = getUserGameStatus(usersGames, session?.user.id);
 
   return (
     <div className="flex justify-between text-xs text-muted-foreground">
       <div className="flex gap-x-1">
-        <AddGameButton id={id} isGameSaved={isGameSaved} />
+        <AddGameButton
+          id={id}
+          isGameSaved={isGameSaved}
+          status={gameStatus?.status}
+        />
         <WishlistGameButton id={id} isGameWishlisted={isGameWishlisted} />
       </div>
       <Button variant="outline" size="icon" className="h-6 w-6">
@@ -63,3 +66,8 @@ const isUserGameWishlisted = (
   usersGames.some(
     (userGame) => userGame.userId === userId && userGame.status === "Wishlist",
   );
+
+const getUserGameStatus = (
+  usersGames: GameArtworkActionsProps["usersGames"],
+  userId: string | undefined,
+) => usersGames.find((userGame) => userGame.userId === userId);
