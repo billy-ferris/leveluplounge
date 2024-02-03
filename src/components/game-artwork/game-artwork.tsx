@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { type FC } from "react";
 
 import {
   PlaystationIcon,
@@ -9,9 +9,7 @@ import {
 import { parentPlatformNameEnum } from "~/schemas/games";
 import { getServerAuthSession } from "~/server/auth";
 import type { gameStatuses } from "~/server/db/schema";
-import { ExpandIcon, GiftIcon, PlusIcon } from "lucide-react";
-import { Button } from "~/components/ui/button";
-import { GameArtworkActions } from "~/components/game-artwork-actions";
+import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
 
 type GameStatus = (typeof gameStatuses)[number];
 
@@ -28,12 +26,12 @@ interface GameArtworkProps {
   artworkUrl: string;
   releaseDate: string;
 }
-export const GameArtwork = async ({
+export const GameArtwork: FC<GameArtworkProps> = async ({
   id,
   usersGames,
   name,
   artworkUrl,
-}: GameArtworkProps) => {
+}) => {
   const session = await getServerAuthSession();
   // const parentPlatforms = game.parent_platforms.map(
   //   ({ platform }) => platform.name,

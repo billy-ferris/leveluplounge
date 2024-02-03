@@ -1,5 +1,5 @@
 import { api } from "~/trpc/server";
-import { GameArtwork } from "~/components/game-artwork";
+import { GameArtwork } from "~/components/game-artwork/game-artwork";
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
 
