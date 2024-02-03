@@ -19,7 +19,7 @@ const config = {
       // Basic redirect
       {
         source: "/",
-        destination: "/all-games",
+        destination: "/discover/browse",
         permanent: true,
       },
     ];

@@ -1,6 +1,6 @@
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea, ScrollBar } from "~/components/ui/scroll-area";
-import { GameArtwork } from "~/components/game-artwork/game-artwork";
+import { GameArtwork } from "~/components/game-artwork";
 import { api } from "~/trpc/server";
 
 const Page = async () => {

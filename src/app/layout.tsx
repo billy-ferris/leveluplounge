@@ -7,7 +7,7 @@ import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
 import { Sidebar } from "~/components/sidebar";
 import { collections } from "~/data";
-import { ThemeProvider } from "~/components/providers/theme-provider";
+import { SessionProvider, ThemeProvider } from "~/components/providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -24,11 +24,13 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
     >
       <TRPCReactProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-          <Sidebar playlists={collections} className="hidden lg:block" />
-          <main className="relative col-span-4 flex min-h-screen flex-col lg:col-span-5 lg:border-l">
-            <div className="flex-1 flex-grow">{children}</div>
-          </main>
-          <Toaster />
+          <SessionProvider>
+            <Sidebar playlists={collections} className="hidden lg:block" />
+            <main className="relative col-span-4 flex min-h-screen flex-col lg:col-span-5 lg:border-l">
+              <div className="flex-1 flex-grow">{children}</div>
+            </main>
+            <Toaster />
+          </SessionProvider>
         </ThemeProvider>
       </TRPCReactProvider>
     </body>

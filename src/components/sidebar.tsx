@@ -1,63 +1,42 @@
-import { CalendarClock, Gamepad2, LayoutGrid, TrendingUp } from "lucide-react";
+"use client";
+import Link from "next/link";
+import { useSession } from "next-auth/react";
+
+import { Gamepad2, LayoutGrid } from "lucide-react";
 
 import { Button, buttonVariants } from "~/components/ui/button";
-import { cn } from "~/lib/utils";
+import { cn, useActivePath } from "~/lib/utils";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import type { Collection } from "~/data";
-import Link from "next/link";
-import { getServerAuthSession } from "~/server/auth";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   playlists: Collection[];
 }
 
-export const Sidebar = async ({ className, playlists }: SidebarProps) => {
-  const session = await getServerAuthSession();
+export const Sidebar = ({ className, playlists }: SidebarProps) => {
+  const session = useSession();
+  const isActivePath = useActivePath();
+
+  console.log(isActivePath("/discover/browse"));
 
   return (
     <div className={cn("pb-12", className)}>
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <Link
-            href={session ? "/api/auth/signout" : "/api/auth/signin"}
-            className={buttonVariants()}
-          >
-            {session ? "Sign out" : "Sign in"}
-          </Link>
           <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">
             Discover
           </h2>
           <div className="space-y-1">
-            {/* TODO: refactor */}
             <Link
               className={cn(
                 buttonVariants({ variant: "ghost" }),
                 "w-full justify-start",
+                isActivePath("/discover/browse") && "active bg-accent",
               )}
-              href="/all-games"
+              href="/discover/browse"
             >
               <LayoutGrid className="mr-2 h-4 w-4" />
               Browse
-            </Link>
-            <Link
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "w-full justify-start",
-              )}
-              href="/new-and-trending"
-            >
-              <TrendingUp className="mr-2 h-4 w-4" />
-              New & Trending
-            </Link>
-            <Link
-              className={cn(
-                buttonVariants({ variant: "ghost" }),
-                "w-full justify-start",
-              )}
-              href="/upcoming-releases"
-            >
-              <CalendarClock className="mr-2 h-4 w-4" />
-              Upcoming Releases
             </Link>
           </div>
         </div>
@@ -70,8 +49,9 @@ export const Sidebar = async ({ className, playlists }: SidebarProps) => {
               className={cn(
                 buttonVariants({ variant: "ghost" }),
                 "w-full justify-start",
+                isActivePath("/library/my-games") && "active bg-accent",
               )}
-              href="/my-games"
+              href="/library/my-games"
             >
               <Gamepad2 className="mr-2 h-4 w-4" />
               My Games
@@ -109,6 +89,12 @@ export const Sidebar = async ({ className, playlists }: SidebarProps) => {
                   {playlist}
                 </Button>
               ))}
+              <Link
+                href={session ? "/api/auth/signout" : "/api/auth/signin"}
+                className={buttonVariants()}
+              >
+                {session ? "Sign out" : "Sign in"}
+              </Link>
             </div>
           </ScrollArea>
         </div>

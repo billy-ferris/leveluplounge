@@ -40,14 +40,23 @@ export const AddGameButton: FC<AddGameButtonProps> = ({
     (status: GameStatus) => {
       addGameToUserMutation.mutate(
         { gameId: id, status },
-        handleMutationSuccess("Game added to your library.", router, () =>
-          deleteGameFromUserMutation.mutate(
-            { gameId: id },
+        handleMutationSuccess("Game added to your library.", router, () => {
+          if (!currentStatus) {
+            return deleteGameFromUserMutation.mutate(
+              { gameId: id },
+              {
+                onSuccess: () => router.refresh(),
+              },
+            );
+          }
+
+          return addGameToUserMutation.mutate(
+            { gameId: id, status: currentStatus },
             {
-              onSuccess: () => router.refresh(), // TODO: is there a better way to update in real-time? ISR?
+              onSuccess: () => router.refresh(),
             },
-          ),
-        ),
+          );
+        }),
       );
     },
     [id, addGameToUserMutation, deleteGameFromUserMutation, router],
