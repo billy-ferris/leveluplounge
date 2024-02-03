@@ -4,7 +4,7 @@ import type { Session } from "next-auth";
 import { ExpandIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import type { gameStatuses } from "~/server/db/schema";
+import type { gameStatuses } from "~/server/db/schemas";
 import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
 
 type GameStatus = (typeof gameStatuses)[number];

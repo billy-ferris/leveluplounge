@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { gameStatuses } from "~/server/db/schema";
+import { gameStatuses } from "~/server/db/schemas";
 
 type GameStatus = (typeof gameStatuses)[number] | null;
 
@@ -59,7 +59,13 @@ export const AddGameButton: FC<AddGameButtonProps> = ({
         }),
       );
     },
-    [id, addGameToUserMutation, deleteGameFromUserMutation, router],
+    [
+      id,
+      currentStatus,
+      addGameToUserMutation,
+      deleteGameFromUserMutation,
+      router,
+    ],
   );
 
   const isLoading =

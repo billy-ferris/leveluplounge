@@ -1,15 +1,15 @@
 import { z } from "zod";
+import { and, eq, sql } from "drizzle-orm";
 
+import { env } from "~/env";
+import type { gamesResponseSchema } from "~/schemas/games";
+import { db } from "~/server/db";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { env } from "~/env";
-import type { gamesResponseSchema } from "~/schemas/games";
-import { db } from "~/server/db";
-import { games, gameStatuses, usersToGames } from "~/server/db/schema";
-import { and, eq, sql } from "drizzle-orm";
+import { games, gameStatuses, usersGames } from "~/server/db/schemas";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 
@@ -70,8 +70,8 @@ export const gamesRouter = createTRPCRouter({
   usersGames: protectedProcedure.query(async ({ ctx }) => {
     const { user } = ctx.session;
 
-    const usersGames = await ctx.db.query.usersToGames.findMany({
-      where: (usersToGames, { eq }) => eq(usersToGames.userId, user.id),
+    const usersGames = await ctx.db.query.usersGames.findMany({
+      where: (usersGames, { eq }) => eq(usersGames.userId, user.id),
       with: {
         game: true,
       },
@@ -89,7 +89,7 @@ export const gamesRouter = createTRPCRouter({
       const { user } = ctx.session;
 
       return ctx.db
-        .insert(usersToGames)
+        .insert(usersGames)
         .values({ userId: user.id, gameId: input.gameId, status: input.status })
         .onDuplicateKeyUpdate({
           set: {
@@ -107,11 +107,11 @@ export const gamesRouter = createTRPCRouter({
       const { user } = ctx.session;
 
       return ctx.db
-        .delete(usersToGames)
+        .delete(usersGames)
         .where(
           and(
-            eq(usersToGames.gameId, input.gameId),
-            eq(usersToGames.userId, user.id),
+            eq(usersGames.gameId, input.gameId),
+            eq(usersGames.userId, user.id),
           ),
         );
     }),

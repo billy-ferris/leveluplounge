@@ -1,20 +1,17 @@
 import {
-  boolean,
-  date,
   index,
   int,
   primaryKey,
   text,
   timestamp,
   varchar,
-  mysqlTableCreator,
 } from "drizzle-orm/mysql-core";
 import { relations, sql } from "drizzle-orm";
 import { type AdapterAccount } from "next-auth/adapters";
 
-export const mysqlTable = mysqlTableCreator((name) => `leveluplounge_${name}`);
+import { games } from "~/server/db/schemas";
+import { mysqlTable } from "~/server/db/utils";
 
-// User
 export const users = mysqlTable("user", {
   id: varchar("id", { length: 255 }).notNull().primaryKey(),
   name: varchar("name", { length: 255 }),
@@ -29,7 +26,7 @@ export const users = mysqlTable("user", {
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
-  usersGames: many(usersToGames),
+  usersGames: many(usersGames),
 }));
 
 export const accounts = mysqlTable(
@@ -100,7 +97,7 @@ export const gameStatuses = [
   "Quit",
 ] as const;
 
-export const usersToGames = mysqlTable(
+export const usersGames = mysqlTable(
   "users_games",
   {
     userId: varchar("user_id", { length: 255 })
@@ -118,60 +115,3 @@ export const usersToGames = mysqlTable(
     pk: primaryKey({ columns: [t.userId, t.gameId] }),
   }),
 );
-
-// Game
-export const games = mysqlTable("game", {
-  id: int("id").notNull().primaryKey().autoincrement(),
-  externalId: int("external_id").notNull().unique(),
-  name: varchar("name", { length: 255 }).notNull(),
-  slug: varchar("slug", { length: 255 }).notNull().unique(),
-  releaseDate: date("release_date", { mode: "date" }).notNull(), // possibly null for unreleased?
-  toBeAnnounced: boolean("to_be_announced").notNull().default(false), // look into a bit more
-  cover: varchar("cover", { length: 255 }).notNull(), // create default artwork image
-  metacriticRating: int("metacritic_rating"),
-
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-});
-
-export const gamesRelations = relations(games, ({ many }) => ({
-  // platforms: many(platforms),
-  // parentPlatforms: many(parentPlatforms),
-  usersGames: many(usersToGames),
-}));
-
-export const usersToGamesRelations = relations(usersToGames, ({ one }) => ({
-  game: one(games, {
-    fields: [usersToGames.gameId],
-    references: [games.id],
-  }),
-  user: one(users, {
-    fields: [usersToGames.userId],
-    references: [users.id],
-  }),
-}));
-
-// export const platforms = mysqlTable("platform", {
-//   id: int("id").notNull().primaryKey().autoincrement(),
-//   name: varchar("name", { length: 255 }).notNull(),
-//   slug: varchar("slug", { length: 255 }).notNull(),
-//
-//   createdAt: timestamp("created_at").defaultNow(),
-//   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-// });
-//
-// export const parentPlatforms = mysqlTable("parent_platform", {
-//   id: int("id").notNull().primaryKey().autoincrement(),
-//   name: varchar("name", { length: 255 }).notNull(),
-//   slug: varchar("slug", { length: 255 }).notNull(),
-//
-//   createdAt: timestamp("created_at").defaultNow(),
-//   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
-// });
-//
-// export const parentPlatformsRelations = relations(
-//   parentPlatforms,
-//   ({ many }) => ({
-//     platforms: many(platforms),
-//   }),
-// );

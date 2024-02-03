@@ -1,15 +1,9 @@
 import Image from "next/image";
 import { type FC } from "react";
 
-import {
-  PlaystationIcon,
-  WindowsIcon,
-  XboxIcon,
-} from "~/components/icons/platforms";
-import { parentPlatformNameEnum } from "~/schemas/games";
 import { getServerAuthSession } from "~/server/auth";
-import type { gameStatuses } from "~/server/db/schema";
-import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
+import type { gameStatuses } from "~/server/db/schemas";
+import { GameArtworkActions } from "~/components/game-artwork";
 
 type GameStatus = (typeof gameStatuses)[number];
 
@@ -24,7 +18,6 @@ interface GameArtworkProps {
       }[]
     | [];
   artworkUrl: string;
-  releaseDate: string;
 }
 export const GameArtwork: FC<GameArtworkProps> = async ({
   id,
@@ -67,18 +60,18 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
   );
 };
 
-const PlatformsList = ({ platforms }: { platforms: string[] }) => {
-  return (
-    <div className="absolute bottom-0 right-0 z-10 inline-flex items-center gap-x-2 rounded-tl-md border border-transparent bg-black px-2.5 py-1 opacity-60 transition hover:opacity-75">
-      {platforms.includes(parentPlatformNameEnum.enum.PC) && (
-        <WindowsIcon height={12} width={12} fill="#FFF" />
-      )}
-      {platforms.includes(parentPlatformNameEnum.enum.Xbox) && (
-        <XboxIcon height={14} width={14} fill="#FFF" />
-      )}
-      {platforms.includes(parentPlatformNameEnum.enum.Playstation) && (
-        <PlaystationIcon height={18} width={18} fill="#FFF" />
-      )}
-    </div>
-  );
-};
+// const PlatformsList = ({ platforms }: { platforms: string[] }) => {
+//   return (
+//     <div className="absolute bottom-0 right-0 z-10 inline-flex items-center gap-x-2 rounded-tl-md border border-transparent bg-black px-2.5 py-1 opacity-60 transition hover:opacity-75">
+//       {platforms.includes(parentPlatformNameEnum.enum.PC) && (
+//         <WindowsIcon height={12} width={12} fill="#FFF" />
+//       )}
+//       {platforms.includes(parentPlatformNameEnum.enum.Xbox) && (
+//         <XboxIcon height={14} width={14} fill="#FFF" />
+//       )}
+//       {platforms.includes(parentPlatformNameEnum.enum.Playstation) && (
+//         <PlaystationIcon height={18} width={18} fill="#FFF" />
+//       )}
+//     </div>
+//   );
+// };

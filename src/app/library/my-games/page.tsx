@@ -19,14 +19,9 @@ const Page = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {games.map(({ id, name, cover, releaseDate }) => (
+            {games.map(({ id, name, cover }) => (
               <div key={id} className="flex flex-col">
-                <GameArtwork
-                  id={id}
-                  name={name}
-                  artworkUrl={cover}
-                  releaseDate={releaseDate.toISOString()}
-                />
+                <GameArtwork id={id} name={name} artworkUrl={cover} />
               </div>
             ))}
           </div>

@@ -20,14 +20,13 @@ const Page = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {allGames.map(({ id, name, cover, releaseDate, usersGames }) => (
+            {allGames.map(({ id, name, cover, usersGames }) => (
               <div key={id} className="flex flex-col">
                 <GameArtwork
                   id={id}
                   usersGames={usersGames}
                   name={name}
                   artworkUrl={cover}
-                  releaseDate={releaseDate.toISOString()}
                 />
               </div>
             ))}
