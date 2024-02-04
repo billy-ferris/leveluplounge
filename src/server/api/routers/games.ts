@@ -9,10 +9,9 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { games, parentPlatforms, userGames } from "~/server/db/schemas/game";
+import { games, parentPlatformGames, userGames } from "~/server/db/schemas";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
-
 const insertUserGameSchema = createInsertSchema(userGames);
 
 export const gamesRouter = createTRPCRouter({
@@ -27,6 +26,7 @@ export const gamesRouter = createTRPCRouter({
 
     return res.json();
   }),
+
   getRecentGames: publicProcedure.query<GamesApiResponse>(async () => {
     const res = await fetch(
       `https://rawg.io/api/games/lists/recent-games-past?discover=true&key=${env.RAWG_API_KEY}&parent_platforms=3&ordering=-released&page=1&page_size=10`,
@@ -38,42 +38,113 @@ export const gamesRouter = createTRPCRouter({
 
     return res.json();
   }),
+
   updateDb: publicProcedure.mutation(async ({ ctx }) => {
+    console.log("Updating database started...");
+
     let nextLink: string | null =
-      `https://api.rawg.io/api/games?page=1&page_size=40&ordering=created&parent_platforms=2,3,7&key=${env.RAWG_API_KEY}`;
+      `https://rawg.io/api/games?parent_platforms=2,3,7&dates=2020-01-01%2C2020-12-31&page=1&page_size=40&key=${env.RAWG_API_KEY}`;
 
-    await ctx.db.insert(parentPlatforms).values([
-      { id: 1, externalId: 3, name: "Xbox", slug: "xbox" },
-      { id: 2, externalId: 2, name: "Playstation", slug: "playstation" },
-      { id: 3, externalId: 7, name: "Nintendo", slug: "nintendo" },
-    ]);
+    await ctx.db.transaction(async (tx) => {
+      while (nextLink) {
+        console.log(`Fetching data from: ${nextLink}`);
+        const res = await fetch(nextLink);
+        const json = (await res.json()) as GamesApiResponse;
 
-    while (nextLink) {
-      const res = await fetch(nextLink);
-      const json = (await res.json()) as GamesApiResponse;
+        console.log(`Fetched ${json.results.length} games from API.`);
 
-      const dbInserts = json.results.map((game) => ({
-        externalId: game.id,
-        name: game.name,
-        slug: game.slug,
-        toBeAnnounced: game.tba,
-        releaseDate: new Date(game.released),
-        coverImage: game.background_image,
-        metacriticRating: game.metacritic,
-      }));
+        const dbInserts = json.results.map((game) => ({
+          externalId: game.id,
+          name: game.name,
+          slug: game.slug,
+          toBeAnnounced: game.tba,
+          releaseDate: new Date(game.released),
+          coverImage: game.background_image,
+          metacriticRating: game.metacritic,
+          parentPlatformIds: game.parent_platforms.map(
+            (platforms) => platforms.platform.id,
+          ),
+        }));
 
-      await ctx.db.insert(games).values(dbInserts);
+        console.log(`Inserting ${dbInserts.length} games into the database.`);
 
-      nextLink = json.next;
-    }
-  }),
-  allGames: publicProcedure.query(async ({ ctx }) => {
-    return ctx.db.query.games.findMany({
-      with: {
-        userGames: true,
-      },
+        let insertedGamesCount = 0;
+
+        for (const { parentPlatformIds, ...insert } of dbInserts) {
+          const [result] = await ctx.db
+            .insert(games)
+            .values(insert)
+            .returning();
+
+          if (result?.id) {
+            for (const id of parentPlatformIds) {
+              switch (id) {
+                case 3:
+                  await tx
+                    .insert(parentPlatformGames)
+                    .values({ gameId: result.id, platformId: 1 })
+                    .onConflictDoNothing();
+                  break;
+                case 2:
+                  await tx
+                    .insert(parentPlatformGames)
+                    .values({ gameId: result.id, platformId: 2 })
+                    .onConflictDoNothing();
+                  break;
+                case 7:
+                  await tx
+                    .insert(parentPlatformGames)
+                    .values({ gameId: result.id, platformId: 3 })
+                    .onConflictDoNothing();
+                  break;
+              }
+            }
+
+            insertedGamesCount++;
+          }
+        }
+
+        console.log(
+          `Inserted a total of ${insertedGamesCount} games for this page.`,
+        );
+
+        nextLink = json.next;
+      }
     });
+
+    console.log("Database update completed.");
   }),
+
+  allGames: publicProcedure
+    .input(
+      z
+        .object({
+          params: z.object({
+            page: z.number().positive(),
+            pageSize: z.number().positive(),
+          }),
+        })
+        .partial()
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const pageSize = input?.params?.pageSize ?? 5;
+      const page = input?.params?.page ?? 1;
+
+      // TODO: prepared query
+      const result = await ctx.db
+        .select()
+        .from(games)
+        .limit(pageSize)
+        .offset(page * pageSize)
+        .leftJoin(userGames, eq(userGames.gameId, games.id));
+
+      return result.map(({ game, user_game }) => ({
+        ...game,
+        userGames: user_game ? [user_game] : [],
+      }));
+    }),
+
   userGames: protectedProcedure.query(async ({ ctx }) => {
     const { user } = ctx.session;
 
@@ -85,6 +156,7 @@ export const gamesRouter = createTRPCRouter({
     });
     return userGames.map((item) => item.game);
   }),
+
   addGameToUser: protectedProcedure
     .input(insertUserGameSchema.omit({ userId: true }))
     .mutation(async ({ ctx, input }) => {
@@ -102,6 +174,7 @@ export const gamesRouter = createTRPCRouter({
           set: { status: input.status },
         });
     }),
+
   deleteGameFromUser: protectedProcedure
     .input(
       z.object({

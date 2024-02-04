@@ -4,7 +4,7 @@ import type { Session } from "next-auth";
 import { ExpandIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import { type userGameStatusEnum } from "~/server/db/schemas/game";
+import { type userGameStatusEnum } from "~/server/db/schemas";
 import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
 
 type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];

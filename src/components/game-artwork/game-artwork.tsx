@@ -3,7 +3,7 @@ import { type FC } from "react";
 
 import { getServerAuthSession } from "~/server/auth";
 import { GameArtworkActions } from "~/components/game-artwork";
-import { type userGameStatusEnum } from "~/server/db/schemas/game";
+import { type userGameStatusEnum } from "~/server/db/schemas";
 
 type GameStatus = (typeof userGameStatusEnum.enumValues)[number];
 

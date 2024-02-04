@@ -15,7 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { userGameStatusEnum } from "~/server/db/schemas/user";
+import { userGameStatusEnum } from "~/server/db/schemas";
 
 type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];
 

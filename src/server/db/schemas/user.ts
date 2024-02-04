@@ -9,7 +9,7 @@ import {
 import { type AdapterAccount } from "next-auth/adapters";
 import { relations } from "drizzle-orm";
 
-import { userGames } from "~/server/db/schemas/game";
+import { userGames } from "~/server/db/schemas";
 
 export const users = pgTable("user", {
   id: varchar("id", { length: 36 }).primaryKey(),

@@ -20,7 +20,7 @@ export const games = pgTable("game", {
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   releaseDate: date("release_date", { mode: "date" }),
   toBeAnnounced: boolean("to_be_announced").notNull().default(false),
-  coverImage: varchar("cover_image", { length: 255 }).notNull(),
+  coverImage: varchar("cover_image", { length: 255 }),
   metacriticRating: integer("metacritic_rating"),
 
   createdAt: timestamp("created_at").defaultNow(),
@@ -77,7 +77,7 @@ export const userGamesRelations = relations(userGames, ({ one }) => ({
 }));
 
 export const parentPlatforms = pgTable("parent_platform", {
-  id: integer("id").primaryKey(),
+  id: serial("id").primaryKey(),
   externalId: integer("external_id").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
