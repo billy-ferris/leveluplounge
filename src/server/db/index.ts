@@ -1,5 +1,5 @@
-import { Client } from "@planetscale/database";
 import { drizzle } from "drizzle-orm/planetscale-serverless";
+import { Client } from "@planetscale/database";
 
 import { env } from "~/env";
 import * as gameSchema from "./schemas/game";

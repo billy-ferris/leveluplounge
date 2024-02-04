@@ -26,7 +26,7 @@ export const users = mysqlTable("user", {
 export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
-  usersGames: many(usersGames),
+  games: many(userGames),
 }));
 
 export const accounts = mysqlTable(
@@ -77,7 +77,7 @@ export const sessionsRelations = relations(sessions, ({ one }) => ({
 }));
 
 export const verificationTokens = mysqlTable(
-  "verificationToken",
+  "verification_token",
   {
     identifier: varchar("identifier", { length: 255 }).notNull(),
     token: varchar("token", { length: 255 }).notNull(),
@@ -97,15 +97,15 @@ export const gameStatuses = [
   "Quit",
 ] as const;
 
-export const usersGames = mysqlTable(
-  "users_games",
+export const userGames = mysqlTable(
+  "user_game",
   {
     userId: varchar("user_id", { length: 255 })
       .notNull()
-      .references(() => users.id),
+      .references(() => users.id, { onDelete: "cascade" }),
     gameId: int("game_id")
       .notNull()
-      .references(() => games.id),
+      .references(() => games.id, { onDelete: "cascade" }),
     status: varchar("status", {
       length: 255,
       enum: gameStatuses,

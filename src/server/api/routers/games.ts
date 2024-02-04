@@ -3,17 +3,20 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { env } from "~/env";
 import type { gamesResponseSchema } from "~/schemas/games";
-import { db } from "~/server/db";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import { games, gameStatuses, usersGames } from "~/server/db/schemas";
+import {
+  games,
+  gameStatuses,
+  parentPlatforms,
+  userGames,
+} from "~/server/db/schemas";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 
-// TODO: add support for all or most parent platforms - need icons
 export const gamesRouter = createTRPCRouter({
   getTrendingGames: publicProcedure.query<GamesApiResponse>(async () => {
     const res = await fetch(
@@ -37,46 +40,58 @@ export const gamesRouter = createTRPCRouter({
 
     return res.json();
   }),
-  updateDb: publicProcedure.query(async () => {
-    const res = await fetch(
-      `https://api.rawg.io/api/games/lists/main?discover=true&key=${env.RAWG_API_KEY}&parent_platforms=3&ordering=-relevance&page=1&page_size=10`,
-    );
-    const json = (await res.json()) as GamesApiResponse;
+  updateDb: publicProcedure.mutation(async ({ ctx }) => {
+    let nextLink: string | null =
+      `https://api.rawg.io/api/games?page=1&page_size=40&ordering=created&parent_platforms=2,3,7&key=${env.RAWG_API_KEY}`;
 
-    const dbInserts = json.results.map(
-      ({ id, name, slug, tba, released, background_image, metacritic }) => ({
-        externalId: id,
-        name,
-        slug,
-        toBeAnnounced: tba,
-        releaseDate: new Date(released),
-        cover: background_image,
-        metacritic,
-      }),
-    );
-
-    return db
-      .insert(games)
-      .values(dbInserts)
+    await ctx.db
+      .insert(parentPlatforms)
+      .values([
+        { id: 1, externalId: 3, name: "Xbox", slug: "xbox" },
+        { id: 2, externalId: 2, name: "Playstation", slug: "playstation" },
+        { id: 3, externalId: 7, name: "Nintendo", slug: "nintendo" },
+      ])
       .onDuplicateKeyUpdate({ set: { id: sql`id` } });
+
+    while (nextLink) {
+      const res = await fetch(nextLink);
+      const json = (await res.json()) as GamesApiResponse;
+
+      const dbInserts = json.results.map((game) => ({
+        externalId: game.id,
+        name: game.name,
+        slug: game.slug,
+        toBeAnnounced: game.tba,
+        releaseDate: new Date(game.released),
+        coverImage: game.background_image,
+        metacriticRating: game.metacritic,
+      }));
+
+      await ctx.db
+        .insert(games)
+        .values(dbInserts)
+        .onDuplicateKeyUpdate({ set: { id: sql`id` } });
+
+      nextLink = json.next;
+    }
   }),
   allGames: publicProcedure.query(async ({ ctx }) => {
     return ctx.db.query.games.findMany({
       with: {
-        usersGames: true,
+        userGames: true,
       },
     });
   }),
-  usersGames: protectedProcedure.query(async ({ ctx }) => {
+  userGames: protectedProcedure.query(async ({ ctx }) => {
     const { user } = ctx.session;
 
-    const usersGames = await ctx.db.query.usersGames.findMany({
-      where: (usersGames, { eq }) => eq(usersGames.userId, user.id),
+    const userGames = await ctx.db.query.userGames.findMany({
+      where: (userGame, { eq }) => eq(userGame.userId, user.id),
       with: {
         game: true,
       },
     });
-    return usersGames.map((item) => item.game);
+    return userGames.map((item) => item.game);
   }),
   addGameToUser: protectedProcedure
     .input(
@@ -89,7 +104,7 @@ export const gamesRouter = createTRPCRouter({
       const { user } = ctx.session;
 
       return ctx.db
-        .insert(usersGames)
+        .insert(userGames)
         .values({ userId: user.id, gameId: input.gameId, status: input.status })
         .onDuplicateKeyUpdate({
           set: {
@@ -107,11 +122,11 @@ export const gamesRouter = createTRPCRouter({
       const { user } = ctx.session;
 
       return ctx.db
-        .delete(usersGames)
+        .delete(userGames)
         .where(
           and(
-            eq(usersGames.gameId, input.gameId),
-            eq(usersGames.userId, user.id),
+            eq(userGames.gameId, input.gameId),
+            eq(userGames.userId, user.id),
           ),
         );
     }),
