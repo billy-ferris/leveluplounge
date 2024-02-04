@@ -1,35 +1,36 @@
 import {
   boolean,
   date,
-  int,
+  integer,
   primaryKey,
   timestamp,
   varchar,
-} from "drizzle-orm/mysql-core";
+  pgTable,
+  pgEnum,
+  serial,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-import { users, userGames } from "~/server/db/schemas/user";
-import { mysqlTable } from "~/server/db/utils";
+import { users } from "~/server/db/schemas/user";
 
-export const games = mysqlTable("game", {
-  id: int("id").primaryKey().autoincrement(),
-  externalId: int("external_id").notNull().unique(),
+export const games = pgTable("game", {
+  id: serial("id").primaryKey(),
+  externalId: integer("external_id").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   releaseDate: date("release_date", { mode: "date" }),
   toBeAnnounced: boolean("to_be_announced").notNull().default(false),
-  coverImage: varchar("cover_image", { length: 255 }), // may need default image
-  metacriticRating: int("metacritic_rating"),
+  coverImage: varchar("cover_image", { length: 255 }).notNull(),
+  metacriticRating: integer("metacritic_rating"),
 
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const gamesRelations = relations(games, ({ many }) => ({
   userGames: many(userGames),
   parentPlatformGames: many(parentPlatformGames),
   // TODO: platforms
-  // platforms: many(platforms),
   // TODO: screenshots
   // TODO: game series
   // TODO: movies/clips
@@ -38,6 +39,31 @@ export const gamesRelations = relations(games, ({ many }) => ({
   // TODO: publishers
   // TODO: ESRB Rating
 }));
+
+export const userGameStatusEnum = pgEnum("user_game_status", [
+  "Wishlist",
+  "Backlog",
+  "Playing",
+  "Paused",
+  "Beaten",
+  "Quit",
+]);
+
+export const userGames = pgTable(
+  "user_game",
+  {
+    userId: varchar("user_id", { length: 255 })
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    gameId: integer("game_id")
+      .notNull()
+      .references(() => games.id, { onDelete: "cascade" }),
+    status: userGameStatusEnum("status"),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.userId, t.gameId] }),
+  }),
+);
 
 export const userGamesRelations = relations(userGames, ({ one }) => ({
   game: one(games, {
@@ -50,27 +76,27 @@ export const userGamesRelations = relations(userGames, ({ one }) => ({
   }),
 }));
 
-export const parentPlatforms = mysqlTable("parent_platform", {
-  id: int("id").primaryKey().autoincrement(),
-  externalId: int("external_id").notNull().unique(),
+export const parentPlatforms = pgTable("parent_platform", {
+  id: integer("id").primaryKey(),
+  externalId: integer("external_id").notNull().unique(),
   name: varchar("name", { length: 255 }).notNull(),
   slug: varchar("slug", { length: 255 }).notNull().unique(),
 
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const parentPlatformsRelations = relations(games, ({ many }) => ({
   games: many(parentPlatformGames),
 }));
 
-export const parentPlatformGames = mysqlTable(
+export const parentPlatformGames = pgTable(
   "parent_platform_game",
   {
-    platformId: int("parent_platform_id")
+    platformId: integer("parent_platform_id")
       .notNull()
       .references(() => parentPlatforms.id, { onDelete: "cascade" }),
-    gameId: int("game_id")
+    gameId: integer("game_id")
       .notNull()
       .references(() => games.id, { onDelete: "cascade" }),
   },

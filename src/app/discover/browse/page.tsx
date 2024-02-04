@@ -20,13 +20,15 @@ const Page = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {allGames.map(({ id, name, cover, usersGames }) => (
+            {/* @ts-expect-error userGames join is present */}
+            {allGames.map(({ id, name, coverImage, userGames }) => (
               <div key={id} className="flex flex-col">
                 <GameArtwork
                   id={id}
-                  usersGames={usersGames}
+                  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                  usersGames={userGames}
                   name={name}
-                  artworkUrl={cover}
+                  artworkUrl={coverImage}
                 />
               </div>
             ))}

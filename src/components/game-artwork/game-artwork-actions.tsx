@@ -4,10 +4,10 @@ import type { Session } from "next-auth";
 import { ExpandIcon } from "lucide-react";
 
 import { Button } from "~/components/ui/button";
-import type { gameStatuses } from "~/server/db/schemas";
+import { type userGameStatusEnum } from "~/server/db/schemas/game";
 import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
 
-type GameStatus = (typeof gameStatuses)[number];
+type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];
 
 interface GameArtworkActionsProps {
   id: number;
@@ -15,7 +15,7 @@ interface GameArtworkActionsProps {
     | {
         gameId: number;
         userId: string;
-        status: GameStatus | null;
+        status: UsersGameStatus | null;
       }[]
     | [];
   session: Session | null;

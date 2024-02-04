@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import { createInsertSchema } from "drizzle-zod";
 
 import { env } from "~/env";
 import type { gamesResponseSchema } from "~/schemas/games";
@@ -8,14 +9,11 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
-import {
-  games,
-  gameStatuses,
-  parentPlatforms,
-  userGames,
-} from "~/server/db/schemas";
+import { games, parentPlatforms, userGames } from "~/server/db/schemas/game";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
+
+const insertUserGameSchema = createInsertSchema(userGames);
 
 export const gamesRouter = createTRPCRouter({
   getTrendingGames: publicProcedure.query<GamesApiResponse>(async () => {
@@ -44,14 +42,11 @@ export const gamesRouter = createTRPCRouter({
     let nextLink: string | null =
       `https://api.rawg.io/api/games?page=1&page_size=40&ordering=created&parent_platforms=2,3,7&key=${env.RAWG_API_KEY}`;
 
-    await ctx.db
-      .insert(parentPlatforms)
-      .values([
-        { id: 1, externalId: 3, name: "Xbox", slug: "xbox" },
-        { id: 2, externalId: 2, name: "Playstation", slug: "playstation" },
-        { id: 3, externalId: 7, name: "Nintendo", slug: "nintendo" },
-      ])
-      .onDuplicateKeyUpdate({ set: { id: sql`id` } });
+    await ctx.db.insert(parentPlatforms).values([
+      { id: 1, externalId: 3, name: "Xbox", slug: "xbox" },
+      { id: 2, externalId: 2, name: "Playstation", slug: "playstation" },
+      { id: 3, externalId: 7, name: "Nintendo", slug: "nintendo" },
+    ]);
 
     while (nextLink) {
       const res = await fetch(nextLink);
@@ -67,10 +62,7 @@ export const gamesRouter = createTRPCRouter({
         metacriticRating: game.metacritic,
       }));
 
-      await ctx.db
-        .insert(games)
-        .values(dbInserts)
-        .onDuplicateKeyUpdate({ set: { id: sql`id` } });
+      await ctx.db.insert(games).values(dbInserts);
 
       nextLink = json.next;
     }
@@ -94,22 +86,20 @@ export const gamesRouter = createTRPCRouter({
     return userGames.map((item) => item.game);
   }),
   addGameToUser: protectedProcedure
-    .input(
-      z.object({
-        gameId: z.number().positive(),
-        status: z.enum(gameStatuses).nullable().optional(),
-      }),
-    )
+    .input(insertUserGameSchema.omit({ userId: true }))
     .mutation(async ({ ctx, input }) => {
       const { user } = ctx.session;
 
       return ctx.db
         .insert(userGames)
-        .values({ userId: user.id, gameId: input.gameId, status: input.status })
-        .onDuplicateKeyUpdate({
-          set: {
-            status: input.status ?? null,
-          },
+        .values({
+          userId: user.id,
+          gameId: input.gameId,
+          status: input.status,
+        })
+        .onConflictDoUpdate({
+          target: [userGames.userId, userGames.gameId],
+          set: { status: input.status },
         });
     }),
   deleteGameFromUser: protectedProcedure

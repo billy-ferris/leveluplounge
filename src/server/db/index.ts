@@ -1,13 +1,14 @@
-import { drizzle } from "drizzle-orm/planetscale-serverless";
-import { Client } from "@planetscale/database";
+import { Client } from "@neondatabase/serverless";
+import { drizzle } from "drizzle-orm/neon-serverless";
 
 import { env } from "~/env";
 import * as gameSchema from "./schemas/game";
 import * as userSchema from "./schemas/user";
 
-export const db = drizzle(
-  new Client({
-    url: `mysql://${env.DATABASE_USER}:${env.DATABASE_PASSWORD}@${env.DATABASE_HOST}/${env.DATABASE_NAME}?ssl={"rejectUnauthorized":true}`,
-  }).connection(),
-  { schema: { ...userSchema, ...gameSchema } },
-);
+const neonClient = new Client({
+  connectionString: `postgresql://${env.DATABASE_USER}:${env.DATABASE_PASSWORD}@${env.DATABASE_HOST}/${env.DATABASE_NAME}?sslmode=require`,
+});
+await neonClient.connect();
+export const db = drizzle(neonClient, {
+  schema: { ...gameSchema, ...userSchema },
+});

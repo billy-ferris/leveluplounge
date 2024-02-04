@@ -2,21 +2,19 @@ import Image from "next/image";
 import { type FC } from "react";
 
 import { getServerAuthSession } from "~/server/auth";
-import type { gameStatuses } from "~/server/db/schemas";
 import { GameArtworkActions } from "~/components/game-artwork";
+import { type userGameStatusEnum } from "~/server/db/schemas/game";
 
-type GameStatus = (typeof gameStatuses)[number];
+type GameStatus = (typeof userGameStatusEnum.enumValues)[number];
 
 interface GameArtworkProps {
   id: number;
   name: string;
-  usersGames?:
-    | {
-        gameId: number;
-        userId: string;
-        status: GameStatus | null;
-      }[]
-    | [];
+  usersGames: {
+    gameId: number;
+    userId: string;
+    status: GameStatus | null;
+  }[];
   artworkUrl: string;
 }
 export const GameArtwork: FC<GameArtworkProps> = async ({

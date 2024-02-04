@@ -4,7 +4,7 @@ import { GameArtwork } from "~/components/game-artwork/game-artwork";
 import { api } from "~/trpc/server";
 
 const Page = async () => {
-  const games = await api.games.usersGames.query();
+  const games = await api.games.userGames.query();
 
   return (
     <div className=" h-full px-4 py-6 lg:px-8">
@@ -19,9 +19,9 @@ const Page = async () => {
       <div className="relative">
         <ScrollArea>
           <div className="flex space-x-4 pb-4">
-            {games.map(({ id, name, cover }) => (
+            {games.map(({ id, name, coverImage }) => (
               <div key={id} className="flex flex-col">
-                <GameArtwork id={id} name={name} artworkUrl={cover} />
+                <GameArtwork id={id} name={name} artworkUrl={coverImage} />
               </div>
             ))}
           </div>

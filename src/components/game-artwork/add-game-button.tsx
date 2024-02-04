@@ -15,15 +15,15 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { gameStatuses } from "~/server/db/schemas";
+import { userGameStatusEnum } from "~/server/db/schemas/user";
 
-type GameStatus = (typeof gameStatuses)[number] | null;
+type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];
 
 interface AddGameButtonProps
   extends Pick<React.HTMLAttributes<HTMLDivElement>, "className"> {
   id: number;
   isGameSaved: boolean;
-  status?: GameStatus;
+  status?: UsersGameStatus | null;
 }
 
 export const AddGameButton: FC<AddGameButtonProps> = ({
@@ -37,7 +37,7 @@ export const AddGameButton: FC<AddGameButtonProps> = ({
   const router = useRouter();
 
   const handleOnClick = useCallback(
-    (status: GameStatus) => {
+    (status: UsersGameStatus) => {
       addGameToUserMutation.mutate(
         { gameId: id, status },
         handleMutationSuccess("Game added to your library.", router, () => {
@@ -94,7 +94,7 @@ export const AddGameButton: FC<AddGameButtonProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[140px] overflow-hidden p-1 text-foreground">
-        {gameStatuses
+        {userGameStatusEnum.enumValues
           .filter((option) => option !== "Wishlist")
           .map((option) => {
             const isSelected = currentStatus === option;
