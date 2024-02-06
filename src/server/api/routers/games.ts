@@ -15,6 +15,10 @@ import { userGameStatus } from "~/schemas/games";
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 const insertUserGameSchema = createInsertSchema(userGames);
 
+type Game = typeof games.$inferSelect;
+type UserGame = typeof userGames.$inferSelect;
+type ParentPlatformGame = typeof parentPlatformGames.$inferSelect;
+
 export const gamesRouter = createTRPCRouter({
   getTrendingGames: publicProcedure.query<GamesApiResponse>(async () => {
     const res = await fetch(
@@ -116,7 +120,7 @@ export const gamesRouter = createTRPCRouter({
     console.log("Database update completed.");
   }),
 
-  allGames: publicProcedure
+  getAllGames: publicProcedure
     .input(
       z
         .object({
@@ -132,14 +136,14 @@ export const gamesRouter = createTRPCRouter({
       const page = input?.params?.page ?? 1;
 
       // TODO: prepared query
-      const result = await ctx.db
+      const rows = await ctx.db
         .select()
         .from(games)
         .limit(pageSize)
         .offset(page * pageSize)
         .leftJoin(userGames, eq(userGames.gameId, games.id));
 
-      return result.map(({ game, user_game }) => ({
+      return rows.map(({ game, user_game }) => ({
         ...game,
         userGames: user_game ? [user_game] : [],
       }));
@@ -148,7 +152,7 @@ export const gamesRouter = createTRPCRouter({
   getUserGames: protectedProcedure.query(async ({ ctx }) => {
     const { user } = ctx.session;
 
-    const result = await ctx.db
+    const rows = await ctx.db
       .select()
       .from(games)
       .leftJoin(userGames, eq(userGames.gameId, games.id))
@@ -159,7 +163,7 @@ export const gamesRouter = createTRPCRouter({
         ),
       );
 
-    return result.map(({ game, user_game }) => ({
+    return rows.map(({ game, user_game }) => ({
       ...game,
       userGames: user_game ? [user_game] : [],
     }));
@@ -170,16 +174,46 @@ export const gamesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { user } = ctx.session;
 
-      const result = await ctx.db
+      const rows = await ctx.db
         .select()
         .from(games)
         .leftJoin(userGames, eq(userGames.gameId, games.id))
+        .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
         .where(and(eq(userGames.userId, user.id), eq(userGames.status, input)));
 
-      return result.map(({ game, user_game }) => ({
-        ...game,
-        userGames: user_game ? [user_game] : [],
-      }));
+      return rows.reduce(
+        (
+          acc,
+          {
+            game,
+            user_game: userGame,
+            parent_platform_game: parentPlatformGame,
+          },
+        ) => {
+          const existingEntry = acc.find((entry) => entry.id === game.id);
+          if (existingEntry) {
+            if (userGame) {
+              existingEntry.userGames.push(userGame);
+            }
+
+            if (parentPlatformGame) {
+              existingEntry.parentPlatforms.push(parentPlatformGame);
+            }
+          } else {
+            acc.push({
+              ...game,
+              userGames: userGame ? [userGame] : [],
+              parentPlatforms: parentPlatformGame ? [parentPlatformGame] : [],
+            });
+          }
+
+          return acc;
+        },
+        [] as (Game & {
+          userGames: UserGame[];
+          parentPlatforms: ParentPlatformGame[];
+        })[],
+      );
     }),
 
   addGameToUser: protectedProcedure

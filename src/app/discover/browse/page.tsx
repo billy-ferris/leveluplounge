@@ -4,7 +4,9 @@ import { GameArtwork } from "~/components/game-artwork";
 import { api } from "~/trpc/server";
 
 const Page = async () => {
-  const allGames = await api.games.allGames.query();
+  const allGames = await api.games.getAllGames.query();
+
+  console.log(JSON.stringify(allGames, null, 2));
 
   return (
     <ScrollArea className="h-screen">
