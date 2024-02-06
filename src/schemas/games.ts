@@ -1,7 +1,15 @@
 import { z } from "zod";
 
-export const parentPlatformNameEnum = z.enum(["PC", "Playstation", "Xbox"]);
-const parentPlatformSlugEnum = z.enum(["pc", "playstation", "xbox"]);
+export const userGameStatus = z.enum([
+  "Wishlist",
+  "Backlog",
+  "Playing",
+  "Paused",
+  "Beaten",
+  "Quit",
+]);
+export const parentPlatform = z.enum(["PC", "Playstation", "Xbox"]);
+const parentPlatformSlug = z.enum(["pc", "playstation", "xbox"]);
 
 const ratingSchema = z.object({
   id: z.number(),
@@ -71,8 +79,8 @@ const shortScreenshotSchema = z.object({
 const parentPlatformsSchema = z.object({
   platform: z.object({
     id: z.number(),
-    name: z.string(parentPlatformNameEnum),
-    slug: z.string(parentPlatformSlugEnum),
+    name: z.string(parentPlatform),
+    slug: z.string(parentPlatformSlug),
   }),
 });
 

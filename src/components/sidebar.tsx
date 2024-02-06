@@ -9,7 +9,6 @@ import { Button, buttonVariants } from "~/components/ui/button";
 import { cn, useActivePath } from "~/lib/utils";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import type { Collection } from "~/data";
-import { UpdateDbButton } from "~/components/db-button";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   playlists: Collection[];
@@ -95,7 +94,6 @@ export const Sidebar = ({ className, playlists }: SidebarProps) => {
               >
                 {session ? "Sign out" : "Sign in"}
               </Link>
-              <UpdateDbButton />
             </div>
           </ScrollArea>
         </div>

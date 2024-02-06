@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { cn } from "~/lib/utils";
+import { userGameStatus } from "~/schemas/games";
 
 interface WishlistGameButtonProps
   extends Pick<React.HTMLAttributes<HTMLDivElement>, "className"> {
@@ -27,7 +28,7 @@ export const WishlistGameButton: FC<WishlistGameButtonProps> = ({
   const router = useRouter();
 
   const handleOnClick = useCallback(() => {
-    const status = isGameWishlisted ? null : "Wishlist";
+    const status = isGameWishlisted ? null : userGameStatus.enum.Wishlist;
     isGameWishlisted
       ? deleteGameFromUserMutation.mutate(
           { gameId: id },

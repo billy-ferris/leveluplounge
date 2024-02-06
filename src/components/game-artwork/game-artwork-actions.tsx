@@ -2,12 +2,13 @@ import { type FC } from "react";
 
 import type { Session } from "next-auth";
 import { ExpandIcon } from "lucide-react";
+import { type z } from "zod";
 
 import { Button } from "~/components/ui/button";
-import { type userGameStatusEnum } from "~/server/db/schemas";
 import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
+import { userGameStatus } from "~/schemas/games";
 
-type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];
+type UsersGameStatus = z.infer<typeof userGameStatus>;
 
 interface GameArtworkActionsProps {
   id: number;
@@ -54,7 +55,8 @@ const isUserGame = (
   userId
     ? usersGames.some(
         (userGame) =>
-          userGame.userId === userId && userGame.status !== "Wishlist",
+          userGame.userId === userId &&
+          userGame.status !== userGameStatus.enum.Wishlist,
       )
     : true;
 
@@ -64,7 +66,9 @@ const isUserGameWishlisted = (
 ): boolean =>
   !!userId &&
   usersGames.some(
-    (userGame) => userGame.userId === userId && userGame.status === "Wishlist",
+    (userGame) =>
+      userGame.userId === userId &&
+      userGame.status === userGameStatus.enum.Wishlist,
   );
 
 const getUserGameStatus = (

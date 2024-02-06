@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { env } from "~/env";
@@ -10,6 +10,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { games, parentPlatformGames, userGames } from "~/server/db/schemas";
+import { userGameStatus } from "~/schemas/games";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 const insertUserGameSchema = createInsertSchema(userGames);
@@ -120,15 +121,14 @@ export const gamesRouter = createTRPCRouter({
       z
         .object({
           params: z.object({
-            page: z.number().positive(),
-            pageSize: z.number().positive(),
+            page: z.number().positive().optional(),
+            pageSize: z.number().positive().optional(),
           }),
         })
-        .partial()
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const pageSize = input?.params?.pageSize ?? 5;
+      const pageSize = input?.params?.pageSize ?? 12;
       const page = input?.params?.page ?? 1;
 
       // TODO: prepared query
@@ -145,17 +145,42 @@ export const gamesRouter = createTRPCRouter({
       }));
     }),
 
-  userGames: protectedProcedure.query(async ({ ctx }) => {
+  getUserGames: protectedProcedure.query(async ({ ctx }) => {
     const { user } = ctx.session;
 
-    const userGames = await ctx.db.query.userGames.findMany({
-      where: (userGame, { eq }) => eq(userGame.userId, user.id),
-      with: {
-        game: true,
-      },
-    });
-    return userGames.map((item) => item.game);
+    const result = await ctx.db
+      .select()
+      .from(games)
+      .leftJoin(userGames, eq(userGames.gameId, games.id))
+      .where(
+        and(
+          eq(userGames.userId, user.id),
+          ne(userGames.status, userGameStatus.enum.Wishlist),
+        ),
+      );
+
+    return result.map(({ game, user_game }) => ({
+      ...game,
+      userGames: user_game ? [user_game] : [],
+    }));
   }),
+
+  getUserGamesByStatus: protectedProcedure
+    .input(userGameStatus)
+    .query(async ({ ctx, input }) => {
+      const { user } = ctx.session;
+
+      const result = await ctx.db
+        .select()
+        .from(games)
+        .leftJoin(userGames, eq(userGames.gameId, games.id))
+        .where(and(eq(userGames.userId, user.id), eq(userGames.status, input)));
+
+      return result.map(({ game, user_game }) => ({
+        ...game,
+        userGames: user_game ? [user_game] : [],
+      }));
+    }),
 
   addGameToUser: protectedProcedure
     .input(insertUserGameSchema.omit({ userId: true }))

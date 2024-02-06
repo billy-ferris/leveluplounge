@@ -12,6 +12,7 @@ import {
 import { relations } from "drizzle-orm";
 
 import { users } from "~/server/db/schemas/user";
+import { userGameStatus } from "~/schemas/games";
 
 export const games = pgTable("game", {
   id: serial("id").primaryKey(),
@@ -40,14 +41,10 @@ export const gamesRelations = relations(games, ({ many }) => ({
   // TODO: ESRB Rating
 }));
 
-export const userGameStatusEnum = pgEnum("user_game_status", [
-  "Wishlist",
-  "Backlog",
-  "Playing",
-  "Paused",
-  "Beaten",
-  "Quit",
-]);
+export const userGameStatusEnum = pgEnum(
+  "user_game_status",
+  userGameStatus.options,
+);
 
 export const userGames = pgTable(
   "user_game",

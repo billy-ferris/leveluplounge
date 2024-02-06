@@ -6,6 +6,7 @@ import { type AppRouterInstance } from "next/dist/shared/lib/app-router-context.
 
 import { PlusIcon, Loader2Icon, CheckIcon, SquarePenIcon } from "lucide-react";
 import { toast } from "sonner";
+import { type z } from "zod";
 
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
@@ -15,9 +16,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "~/components/ui/popover";
-import { userGameStatusEnum } from "~/server/db/schemas";
+import { userGameStatus } from "~/schemas/games";
 
-type UsersGameStatus = (typeof userGameStatusEnum.enumValues)[number];
+type UsersGameStatus = z.infer<typeof userGameStatus>;
 
 interface AddGameButtonProps
   extends Pick<React.HTMLAttributes<HTMLDivElement>, "className"> {
@@ -94,8 +95,8 @@ export const AddGameButton: FC<AddGameButtonProps> = ({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[140px] overflow-hidden p-1 text-foreground">
-        {userGameStatusEnum.enumValues
-          .filter((option) => option !== "Wishlist")
+        {userGameStatus.options
+          .filter((option) => option !== userGameStatus.enum.Wishlist)
           .map((option) => {
             const isSelected = currentStatus === option;
 
