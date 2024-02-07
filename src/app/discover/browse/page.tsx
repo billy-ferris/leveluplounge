@@ -6,8 +6,6 @@ import { api } from "~/trpc/server";
 const Page = async () => {
   const allGames = await api.games.getAllGames.query();
 
-  console.log(JSON.stringify(allGames, null, 2));
-
   return (
     <ScrollArea className="h-screen">
       <div className=" h-full px-4 py-6 lg:px-8">

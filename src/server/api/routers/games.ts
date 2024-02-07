@@ -1,23 +1,33 @@
 import { z } from "zod";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { env } from "~/env";
 import type { gamesResponseSchema } from "~/schemas/games";
+import { userGameStatus } from "~/schemas/games";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "~/server/api/trpc";
 import { games, parentPlatformGames, userGames } from "~/server/db/schemas";
-import { userGameStatus } from "~/schemas/games";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 const insertUserGameSchema = createInsertSchema(userGames);
 
-type Game = typeof games.$inferSelect;
 type UserGame = typeof userGames.$inferSelect;
 type ParentPlatformGame = typeof parentPlatformGames.$inferSelect;
+
+const gameSelect = {
+  id: games.id,
+  externalId: games.externalId,
+  name: games.name,
+  slug: games.slug,
+  coverImage: games.coverImage,
+  releaseDate: games.releaseDate,
+  toBeAnnounced: games.toBeAnnounced,
+  metacriticRating: games.metacriticRating,
+};
 
 export const gamesRouter = createTRPCRouter({
   getTrendingGames: publicProcedure.query<GamesApiResponse>(async () => {
@@ -135,18 +145,28 @@ export const gamesRouter = createTRPCRouter({
       const pageSize = input?.params?.pageSize ?? 12;
       const page = input?.params?.page ?? 1;
 
-      // TODO: prepared query
-      const rows = await ctx.db
-        .select()
+      // TODO: prepared query or refactor
+      return await ctx.db
+        .select({
+          ...gameSelect,
+          userGames: sql<UserGame[]>`JSON_AGG(DISTINCT jsonb_build_object(
+            'userId', ${userGames.userId},
+            'gameId', ${userGames.gameId},
+            'status', ${userGames.status}
+          ))`,
+          parentPlatforms: sql<
+            ParentPlatformGame[]
+          >`JSON_AGG(DISTINCT jsonb_build_object(
+            'gameId', ${parentPlatformGames.gameId},
+            'platformId', ${parentPlatformGames.platformId}
+          ))`,
+        })
         .from(games)
+        .leftJoin(userGames, eq(userGames.gameId, games.id))
+        .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
+        .groupBy(games.id)
         .limit(pageSize)
-        .offset(page * pageSize)
-        .leftJoin(userGames, eq(userGames.gameId, games.id));
-
-      return rows.map(({ game, user_game }) => ({
-        ...game,
-        userGames: user_game ? [user_game] : [],
-      }));
+        .offset(page * pageSize);
     }),
 
   getUserGames: protectedProcedure.query(async ({ ctx }) => {
@@ -174,46 +194,26 @@ export const gamesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const { user } = ctx.session;
 
-      const rows = await ctx.db
-        .select()
+      return await ctx.db
+        .select({
+          ...gameSelect,
+          userGames: sql<UserGame[]>`JSON_AGG(DISTINCT jsonb_build_object(
+            'userId', ${userGames.userId},
+            'gameId', ${userGames.gameId},
+            'status', ${userGames.status}
+          ))`,
+          parentPlatforms: sql<
+            ParentPlatformGame[]
+          >`JSON_AGG(DISTINCT jsonb_build_object(
+            'gameId', ${parentPlatformGames.gameId},
+            'platformId', ${parentPlatformGames.platformId}
+          ))`,
+        })
         .from(games)
         .leftJoin(userGames, eq(userGames.gameId, games.id))
         .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
-        .where(and(eq(userGames.userId, user.id), eq(userGames.status, input)));
-
-      return rows.reduce(
-        (
-          acc,
-          {
-            game,
-            user_game: userGame,
-            parent_platform_game: parentPlatformGame,
-          },
-        ) => {
-          const existingEntry = acc.find((entry) => entry.id === game.id);
-          if (existingEntry) {
-            if (userGame) {
-              existingEntry.userGames.push(userGame);
-            }
-
-            if (parentPlatformGame) {
-              existingEntry.parentPlatforms.push(parentPlatformGame);
-            }
-          } else {
-            acc.push({
-              ...game,
-              userGames: userGame ? [userGame] : [],
-              parentPlatforms: parentPlatformGame ? [parentPlatformGame] : [],
-            });
-          }
-
-          return acc;
-        },
-        [] as (Game & {
-          userGames: UserGame[];
-          parentPlatforms: ParentPlatformGame[];
-        })[],
-      );
+        .where(and(eq(userGames.userId, user.id), eq(userGames.status, input)))
+        .groupBy(games.id);
     }),
 
   addGameToUser: protectedProcedure
