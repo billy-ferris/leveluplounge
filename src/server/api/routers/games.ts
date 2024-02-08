@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { and, eq, ne, sql } from "drizzle-orm";
+import { and, eq, ilike, ne, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { env } from "~/env";
@@ -30,30 +30,6 @@ const gameSelect = {
 };
 
 export const gamesRouter = createTRPCRouter({
-  getTrendingGames: publicProcedure.query<GamesApiResponse>(async () => {
-    const res = await fetch(
-      `https://api.rawg.io/api/games/lists/main?discover=true&key=${env.RAWG_API_KEY}&parent_platforms=3&ordering=-relevance&page=1&page_size=10`,
-    );
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch trending games data");
-    }
-
-    return res.json();
-  }),
-
-  getRecentGames: publicProcedure.query<GamesApiResponse>(async () => {
-    const res = await fetch(
-      `https://rawg.io/api/games/lists/recent-games-past?discover=true&key=${env.RAWG_API_KEY}&parent_platforms=3&ordering=-released&page=1&page_size=10`,
-    );
-
-    if (!res.ok) {
-      throw new Error("Failed to fetch trending games data");
-    }
-
-    return res.json();
-  }),
-
   updateDb: publicProcedure.mutation(async ({ ctx }) => {
     console.log("Updating database started...");
 
@@ -137,6 +113,7 @@ export const gamesRouter = createTRPCRouter({
           params: z.object({
             page: z.number().positive().optional(),
             pageSize: z.number().positive().optional(),
+            search: z.string().optional(),
           }),
         })
         .optional(),
@@ -144,9 +121,11 @@ export const gamesRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const pageSize = input?.params?.pageSize ?? 12;
       const page = input?.params?.page ?? 1;
+      const search = input?.params?.search?.trim() ?? "";
+      const offset = (page - 1) * pageSize;
 
       // TODO: prepared query or refactor
-      return await ctx.db
+      return ctx.db
         .select({
           ...gameSelect,
           userGames: sql<UserGame[]>`JSON_AGG(DISTINCT jsonb_build_object(
@@ -162,11 +141,12 @@ export const gamesRouter = createTRPCRouter({
           ))`,
         })
         .from(games)
+        .where(ilike(games.name, `%${search}%`))
         .leftJoin(userGames, eq(userGames.gameId, games.id))
         .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
         .groupBy(games.id)
         .limit(pageSize)
-        .offset(page * pageSize);
+        .offset(offset);
     }),
 
   getUserGames: protectedProcedure.query(async ({ ctx }) => {

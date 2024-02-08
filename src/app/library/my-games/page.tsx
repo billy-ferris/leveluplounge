@@ -1,11 +1,10 @@
-import { PlusCircleIcon } from "lucide-react";
-
 import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
-import { Button } from "~/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MyGamesContent } from "~/components/my-games";
 import { userGameStatus } from "~/schemas/games";
+import { GameSearchButton } from "~/components/game-search-button";
+import { UpdateDbButton } from "~/components/db-button";
 
 const myGamesContentStatuses = userGameStatus.options.filter(
   (option) => option !== userGameStatus.enum.Wishlist,
@@ -27,11 +26,9 @@ const Page = async () => (
               </TabsTrigger>
             ))}
           </TabsList>
-          <div className="ml-auto mr-4">
-            <Button>
-              <PlusCircleIcon className="mr-2 h-4 w-4" />
-              Add game
-            </Button>
+          <div className="ml-auto mr-4 space-x-4">
+            <UpdateDbButton />
+            <GameSearchButton />
           </div>
         </div>
         <div className="flex items-center justify-between">
