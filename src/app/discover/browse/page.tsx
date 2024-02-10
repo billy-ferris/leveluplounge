@@ -20,16 +20,19 @@ const Page = async () => {
         <Separator className="my-4" />
         <div className="relative">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {allGames.map(({ id, name, coverImage, userGames }) => (
-              <div key={id} className="flex flex-col">
-                <GameArtwork
-                  id={id}
-                  userGames={userGames}
-                  name={name}
-                  artworkUrl={coverImage ?? ""}
-                />
-              </div>
-            ))}
+            {allGames.map(
+              ({ id, name, coverImage, userGames, metacriticRating }) => (
+                <div key={id} className="flex flex-col">
+                  <GameArtwork
+                    id={id}
+                    userGames={userGames}
+                    name={name}
+                    artworkUrl={coverImage ?? ""}
+                    metacriticRating={metacriticRating}
+                  />
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import { getServerAuthSession } from "~/server/auth";
 import { PlatformsList } from "~/components/game-artwork/platforms-list";
 import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
 import { Button } from "~/components/ui/button";
+import { cn } from "~/lib/utils";
 
 type GameStatus = z.infer<typeof userGameStatus>;
 
@@ -21,18 +22,31 @@ interface GameArtworkProps {
     status: GameStatus | null;
   }[];
   artworkUrl: string;
+  metacriticRating: number | null;
 }
+
 export const GameArtwork: FC<GameArtworkProps> = async ({
   id,
   userGames,
   name,
   artworkUrl,
+  metacriticRating,
 }) => {
   const session = await getServerAuthSession();
 
   return (
     <div className="rounded-md border">
       <div className={`group relative h-[180px] overflow-hidden rounded-t-md`}>
+        {metacriticRating && (
+          <div
+            className={cn(
+              "absolute right-2 top-2 z-10 flex h-6 w-6 items-center justify-center rounded-md text-xs font-medium text-white",
+              getBackgroundByRating(metacriticRating),
+            )}
+          >
+            {metacriticRating}
+          </div>
+        )}
         <Image
           src={artworkUrl}
           alt={name}
@@ -59,4 +73,14 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
       </div>
     </div>
   );
+};
+
+const getBackgroundByRating = (rating: number) => {
+  if (rating >= 80) {
+    return "bg-green-800";
+  } else if (rating <= 60) {
+    return "bg-red-800";
+  } else {
+    return "bg-yellow-800";
+  }
 };
