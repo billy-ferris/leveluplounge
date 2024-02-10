@@ -6,12 +6,14 @@ import { ExpandIcon } from "lucide-react";
 
 import { type userGameStatus } from "~/schemas/games";
 import { getServerAuthSession } from "~/server/auth";
-import { PlatformsList } from "~/components/game-artwork/platforms-list";
+import { ParentPlatformsList } from "~/components/game-artwork/parent-platforms-list";
 import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
+import { type parentPlatformGames } from "~/server/db/schemas";
 
 type GameStatus = z.infer<typeof userGameStatus>;
+type ParentPlatformGame = typeof parentPlatformGames.$inferSelect;
 
 interface GameArtworkProps {
   id: number;
@@ -21,6 +23,7 @@ interface GameArtworkProps {
     userId: string;
     status: GameStatus | null;
   }[];
+  parentPlatforms: ParentPlatformGame[];
   artworkUrl: string;
   metacriticRating: number | null;
 }
@@ -28,6 +31,7 @@ interface GameArtworkProps {
 export const GameArtwork: FC<GameArtworkProps> = async ({
   id,
   userGames,
+  parentPlatforms,
   name,
   artworkUrl,
   metacriticRating,
@@ -56,7 +60,7 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
         />
       </div>
       <div className="flex flex-col gap-y-1 p-3 text-sm">
-        <PlatformsList />
+        <ParentPlatformsList platforms={parentPlatforms} />
         <h3 className="... truncate text-ellipsis font-medium leading-5">
           {name}
         </h3>

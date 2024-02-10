@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogTrigger } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
 import { Search } from "~/components/ui/search";
 import { api } from "~/trpc/react";
-import { PlatformsList } from "~/components/game-artwork/platforms-list";
+import { ParentPlatformsList } from "~/components/game-artwork/parent-platforms-list";
 import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
 import { cn } from "~/lib/utils";
 import { ScrollArea } from "~/components/ui/scroll-area";
@@ -95,7 +95,7 @@ export const GameSearchButton = () => {
                           />
                         </div>
                         <div className="flex flex-col gap-y-1 text-sm">
-                          <PlatformsList />
+                          <ParentPlatformsList platforms={parentPlatforms} />
                           <h3 className="... truncate text-ellipsis font-medium leading-5">
                             {name}
                           </h3>

@@ -18,17 +18,27 @@ export const MyGamesContent: FC<MyGamesContentProps> = async ({ status }) => {
     <div className="relative">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {games.length >= 1 ? (
-          games.map(({ id, name, coverImage, userGames, metacriticRating }) => (
-            <div key={id} className="flex flex-col">
-              <GameArtwork
-                id={id}
-                name={name}
-                artworkUrl={coverImage ?? ""}
-                userGames={userGames}
-                metacriticRating={metacriticRating}
-              />
-            </div>
-          ))
+          games.map(
+            ({
+              id,
+              name,
+              coverImage,
+              userGames,
+              parentPlatforms,
+              metacriticRating,
+            }) => (
+              <div key={id} className="flex flex-col">
+                <GameArtwork
+                  id={id}
+                  name={name}
+                  artworkUrl={coverImage ?? ""}
+                  userGames={userGames}
+                  parentPlatforms={parentPlatforms}
+                  metacriticRating={metacriticRating}
+                />
+              </div>
+            ),
+          )
         ) : (
           <p className="text-sm text-muted-foreground">No games</p>
         )}

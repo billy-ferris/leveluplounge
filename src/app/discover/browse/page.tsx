@@ -21,11 +21,19 @@ const Page = async () => {
         <div className="relative">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {allGames.map(
-              ({ id, name, coverImage, userGames, metacriticRating }) => (
+              ({
+                id,
+                name,
+                coverImage,
+                userGames,
+                parentPlatforms,
+                metacriticRating,
+              }) => (
                 <div key={id} className="flex flex-col">
                   <GameArtwork
                     id={id}
                     userGames={userGames}
+                    parentPlatforms={parentPlatforms}
                     name={name}
                     artworkUrl={coverImage ?? ""}
                     metacriticRating={metacriticRating}
