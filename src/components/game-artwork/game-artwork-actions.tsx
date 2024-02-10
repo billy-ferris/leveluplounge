@@ -1,12 +1,11 @@
 import { type FC } from "react";
 
-import type { Session } from "next-auth";
-import { ExpandIcon } from "lucide-react";
 import { type z } from "zod";
+import { type Session } from "next-auth";
 
-import { Button } from "~/components/ui/button";
-import { AddGameButton, WishlistGameButton } from "~/components/game-artwork";
 import { userGameStatus } from "~/schemas/games";
+import { AddGameButton } from "~/components/game-artwork/add-game-button";
+import { WishlistGameButton } from "~/components/game-artwork/wishlist-game-button";
 
 type UsersGameStatus = z.infer<typeof userGameStatus>;
 
@@ -32,18 +31,13 @@ export const GameArtworkActions: FC<GameArtworkActionsProps> = ({
   const gameStatus = getUserGameStatus(usersGames, session?.user.id);
 
   return (
-    <div className="flex justify-between text-xs text-muted-foreground">
-      <div className="flex gap-x-1">
-        <AddGameButton
-          id={id}
-          isGameSaved={isGameSaved}
-          status={gameStatus?.status}
-        />
-        <WishlistGameButton id={id} isGameWishlisted={isGameWishlisted} />
-      </div>
-      <Button variant="outline" size="icon" className="h-6 w-6">
-        <ExpandIcon className="h-3 w-3" />
-      </Button>
+    <div className="flex gap-x-1">
+      <AddGameButton
+        id={id}
+        isGameSaved={isGameSaved}
+        status={gameStatus?.status}
+      />
+      <WishlistGameButton id={id} isGameWishlisted={isGameWishlisted} />
     </div>
   );
 };
@@ -58,7 +52,7 @@ const isUserGame = (
           userGame.userId === userId &&
           userGame.status !== userGameStatus.enum.Wishlist,
       )
-    : true;
+    : false;
 
 const isUserGameWishlisted = (
   usersGames: GameArtworkActionsProps["usersGames"],

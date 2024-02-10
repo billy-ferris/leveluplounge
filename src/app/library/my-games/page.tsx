@@ -6,14 +6,15 @@ import { userGameStatus } from "~/schemas/games";
 import { GameSearchButton } from "~/components/game-search-button";
 import { UpdateDbButton } from "~/components/db-button";
 
-const myGamesContentStatuses = userGameStatus.options.filter(
-  (option) => option !== userGameStatus.enum.Wishlist,
-);
+const myGamesContentStatuses = userGameStatus.options;
 
 const Page = async () => (
   <ScrollArea className="h-screen">
     <div className=" h-full px-4 py-6 lg:px-8">
-      <Tabs defaultValue="backlog" className="h-full space-y-6">
+      <Tabs
+        defaultValue={userGameStatus.enum.Wishlist.toLowerCase()}
+        className="h-full space-y-6"
+      >
         <div className="space-between flex items-center">
           <TabsList>
             {myGamesContentStatuses.map((status, idx) => (

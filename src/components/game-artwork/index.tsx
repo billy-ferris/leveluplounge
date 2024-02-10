@@ -2,15 +2,13 @@ import { type FC } from "react";
 
 import Image from "next/image";
 import { type z } from "zod";
+import { ExpandIcon } from "lucide-react";
 
-import { getServerAuthSession } from "~/server/auth";
-import { GameArtworkActions } from "~/components/game-artwork";
-import {
-  NintendoIcon,
-  PlaystationIcon,
-  XboxIcon,
-} from "~/components/icons/platforms";
 import { type userGameStatus } from "~/schemas/games";
+import { getServerAuthSession } from "~/server/auth";
+import { PlatformsList } from "~/components/game-artwork/platforms-list";
+import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actions";
+import { Button } from "~/components/ui/button";
 
 type GameStatus = z.infer<typeof userGameStatus>;
 
@@ -31,9 +29,6 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
   artworkUrl,
 }) => {
   const session = await getServerAuthSession();
-  // const parentPlatforms = game.parent_platforms.map(
-  //   ({ platform }) => platform.name,
-  // );
 
   return (
     <div className="rounded-md border">
@@ -51,25 +46,17 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
         <h3 className="... truncate text-ellipsis font-medium leading-5">
           {name}
         </h3>
-        <GameArtworkActions id={id} usersGames={userGames} session={session} />
+        <div className="flex justify-between text-xs text-muted-foreground">
+          <GameArtworkActions
+            id={id}
+            usersGames={userGames}
+            session={session}
+          />
+          <Button variant="outline" size="icon" className="h-6 w-6">
+            <ExpandIcon className="h-3 w-3" />
+          </Button>
+        </div>
       </div>
-    </div>
-  );
-};
-
-const PlatformsList = ({ platforms }: { platforms?: string[] }) => {
-  return (
-    // <div className="absolute right-0 top-0 z-10 inline-flex items-center gap-x-1.5 rounded-bl-md border border-t-0 bg-black px-2.5 py-1">
-    <div className="inline-flex items-center gap-x-1.5">
-      {/*{platforms.includes(parentPlatformNameEnum.enum.PC) && (*/}
-      <XboxIcon className="h-3 w-3 fill-primary" />
-      {/*)}*/}
-      {/*{platforms.includes(parentPlatformNameEnum.enum.Xbox) && (*/}
-      <PlaystationIcon className="h-4 w-4 fill-primary" />
-      {/*)}*/}
-      {/*{platforms.includes(parentPlatformNameEnum.enum.Playstation) && (*/}
-      <NintendoIcon className="h-4 w-4 fill-primary" />
-      {/*)}*/}
     </div>
   );
 };

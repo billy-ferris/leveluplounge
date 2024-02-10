@@ -17,16 +17,20 @@ export const MyGamesContent: FC<MyGamesContentProps> = async ({ status }) => {
   return (
     <div className="relative">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {games.map(({ id, name, coverImage, userGames }) => (
-          <div key={id} className="flex flex-col">
-            <GameArtwork
-              id={id}
-              name={name}
-              artworkUrl={coverImage ?? ""}
-              userGames={userGames}
-            />
-          </div>
-        ))}
+        {games.length >= 1 ? (
+          games.map(({ id, name, coverImage, userGames }) => (
+            <div key={id} className="flex flex-col">
+              <GameArtwork
+                id={id}
+                name={name}
+                artworkUrl={coverImage ?? ""}
+                userGames={userGames}
+              />
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">No games</p>
+        )}
       </div>
     </div>
   );
