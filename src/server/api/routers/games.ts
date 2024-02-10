@@ -1,5 +1,15 @@
 import { z } from "zod";
-import { and, eq, ilike, ne, sql } from "drizzle-orm";
+import {
+  and,
+  type AnyColumn,
+  asc,
+  desc,
+  eq,
+  ilike,
+  ne,
+  sql,
+  type SQLWrapper,
+} from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 
 import { env } from "~/env";
@@ -114,6 +124,8 @@ export const gamesRouter = createTRPCRouter({
             page: z.number().positive().optional(),
             pageSize: z.number().positive().optional(),
             search: z.string().optional(),
+            sortBy: z.string().optional(),
+            sortOrder: z.enum(["asc", "desc"]).optional(),
           }),
         })
         .optional(),
@@ -122,7 +134,24 @@ export const gamesRouter = createTRPCRouter({
       const pageSize = input?.params?.pageSize ?? 12;
       const page = input?.params?.page ?? 1;
       const search = input?.params?.search?.trim() ?? "";
+      const sortBy = input?.params?.sortBy ?? "id";
+      const sortOrder = input?.params?.sortOrder ?? "asc";
       const offset = (page - 1) * pageSize;
+
+      const gamesSelectMapping: Record<string, SQLWrapper | AnyColumn> = {
+        id: games.id,
+        externalId: games.externalId,
+        name: games.name,
+        slug: games.slug,
+        coverImage: games.coverImage,
+        releaseDate: games.releaseDate,
+        toBeAnnounced: games.toBeAnnounced,
+        metacriticRating: games.metacriticRating,
+      };
+
+      if (!(sortBy in gamesSelectMapping)) {
+        throw new Error(`Invalid sortBy field: ${sortBy}`);
+      }
 
       // TODO: prepared query or refactor
       return ctx.db
@@ -144,6 +173,11 @@ export const gamesRouter = createTRPCRouter({
         .where(ilike(games.name, `%${search}%`))
         .leftJoin(userGames, eq(userGames.gameId, games.id))
         .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
+        .orderBy(
+          sortOrder === "asc"
+            ? asc(gamesSelectMapping[sortBy] ?? games.id)
+            : desc(gamesSelectMapping[sortBy] ?? games.id),
+        )
         .groupBy(games.id)
         .limit(pageSize)
         .offset(offset);
