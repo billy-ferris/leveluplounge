@@ -2,8 +2,6 @@ import { z } from "zod";
 import {
   and,
   type AnyColumn,
-  asc,
-  desc,
   eq,
   ilike,
   ne,
@@ -21,6 +19,7 @@ import {
   publicProcedure,
 } from "~/server/api/trpc";
 import { games, parentPlatformGames, userGames } from "~/server/db/schemas";
+import { asc, desc } from "~/server/db/utils";
 
 type GamesApiResponse = z.infer<typeof gamesResponseSchema>;
 const insertUserGameSchema = createInsertSchema(userGames);
