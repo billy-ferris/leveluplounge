@@ -11,6 +11,7 @@ import { GameArtworkActions } from "~/components/game-artwork/game-artwork-actio
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 import { type parentPlatformGames } from "~/server/db/schemas";
+import { AspectRatio } from "~/components/ui/aspect-ratio";
 
 type GameStatus = z.infer<typeof userGameStatus>;
 type ParentPlatformGame = typeof parentPlatformGames.$inferSelect;
@@ -40,7 +41,10 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
 
   return (
     <div className="rounded-md border">
-      <div className={`group relative h-[180px] overflow-hidden rounded-t-md`}>
+      <AspectRatio
+        ratio={16 / 9}
+        className="group relative overflow-hidden rounded-t-md bg-muted"
+      >
         {metacriticRating && (
           <div
             className={cn(
@@ -58,7 +62,7 @@ export const GameArtwork: FC<GameArtworkProps> = async ({
           style={{ objectFit: "cover", objectPosition: "center" }}
           className="h-auto w-auto object-cover transition-all duration-200 group-hover:scale-105"
         />
-      </div>
+      </AspectRatio>
       <div className="flex flex-col gap-y-1 p-3 text-sm">
         <ParentPlatformsList platforms={parentPlatforms} />
         <h3 className="... truncate text-ellipsis font-medium leading-5">
