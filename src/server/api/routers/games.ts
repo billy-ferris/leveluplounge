@@ -38,12 +38,23 @@ const gameSelect = {
   metacriticRating: games.metacriticRating,
 };
 
+const gamesSelectMapping: Record<string, SQLWrapper | AnyColumn> = {
+  id: games.id,
+  externalId: games.externalId,
+  name: games.name,
+  slug: games.slug,
+  coverImage: games.coverImage,
+  releaseDate: games.releaseDate,
+  toBeAnnounced: games.toBeAnnounced,
+  metacriticRating: games.metacriticRating,
+};
+
 export const gamesRouter = createTRPCRouter({
   updateDb: publicProcedure.mutation(async ({ ctx }) => {
     console.log("Updating database started...");
 
     let nextLink: string | null =
-      `https://rawg.io/api/games?parent_platforms=2,3,7&dates=2020-01-01%2C2020-12-31&page=1&page_size=40&key=${env.RAWG_API_KEY}`;
+      `https://rawg.io/api/games?parent_platforms=2,3,7&dates=2018-01-01%2C2018-12-31&page=1&page_size=40&key=${env.RAWG_API_KEY}`;
 
     await ctx.db.transaction(async (tx) => {
       while (nextLink) {
@@ -119,13 +130,15 @@ export const gamesRouter = createTRPCRouter({
     .input(
       z
         .object({
-          params: z.object({
-            page: z.number().positive().optional(),
-            pageSize: z.number().positive().optional(),
-            search: z.string().optional(),
-            sortBy: z.string().optional(),
-            sortOrder: z.enum(["asc", "desc"]).optional(),
-          }),
+          params: z
+            .object({
+              page: z.number().positive(),
+              pageSize: z.number().positive(),
+              search: z.string(),
+              sortBy: z.string(),
+              sortOrder: z.enum(["asc", "desc"]),
+            })
+            .partial(),
         })
         .optional(),
     )
@@ -136,17 +149,6 @@ export const gamesRouter = createTRPCRouter({
       const sortBy = input?.params?.sortBy ?? "id";
       const sortOrder = input?.params?.sortOrder ?? "asc";
       const offset = (page - 1) * pageSize;
-
-      const gamesSelectMapping: Record<string, SQLWrapper | AnyColumn> = {
-        id: games.id,
-        externalId: games.externalId,
-        name: games.name,
-        slug: games.slug,
-        coverImage: games.coverImage,
-        releaseDate: games.releaseDate,
-        toBeAnnounced: games.toBeAnnounced,
-        metacriticRating: games.metacriticRating,
-      };
 
       if (!(sortBy in gamesSelectMapping)) {
         throw new Error(`Invalid sortBy field: ${sortBy}`);
@@ -203,9 +205,33 @@ export const gamesRouter = createTRPCRouter({
   }),
 
   getUserGamesByStatus: protectedProcedure
-    .input(userGameStatus)
+    .input(
+      z.object({
+        status: userGameStatus,
+        params: z
+          .object({
+            page: z.number().positive(),
+            pageSize: z.number().positive(),
+            search: z.string(),
+            sortBy: z.string(),
+            sortOrder: z.enum(["asc", "desc"]),
+          })
+          .partial()
+          .optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const { user } = ctx.session;
+      const pageSize = input.params?.pageSize ?? 20;
+      const page = input.params?.page ?? 1;
+      const search = input.params?.search?.trim() ?? "";
+      const sortBy = input.params?.sortBy ?? "name";
+      const sortOrder = input.params?.sortOrder ?? "asc";
+      const offset = (page - 1) * pageSize;
+
+      if (!(sortBy in gamesSelectMapping)) {
+        throw new Error(`Invalid sortBy field: ${sortBy}`);
+      }
 
       return await ctx.db
         .select({
@@ -225,8 +251,23 @@ export const gamesRouter = createTRPCRouter({
         .from(games)
         .leftJoin(userGames, eq(userGames.gameId, games.id))
         .leftJoin(parentPlatformGames, eq(parentPlatformGames.gameId, games.id))
-        .where(and(eq(userGames.userId, user.id), eq(userGames.status, input)))
-        .groupBy(games.id);
+        .where(
+          and(
+            ilike(games.name, `%${search}%`),
+            and(
+              eq(userGames.userId, user.id),
+              eq(userGames.status, input.status),
+            ),
+          ),
+        )
+        .orderBy(
+          sortOrder === "asc"
+            ? asc(gamesSelectMapping[sortBy] ?? games.id)
+            : desc(gamesSelectMapping[sortBy] ?? games.id),
+        )
+        .groupBy(games.id)
+        .limit(pageSize)
+        .offset(offset);
     }),
 
   addGameToUser: protectedProcedure

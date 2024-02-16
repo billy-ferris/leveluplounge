@@ -5,8 +5,6 @@ import { Toaster } from "sonner";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { cn } from "~/lib/utils";
-import { Sidebar } from "~/components/sidebar";
-import { collections } from "~/data";
 import { SessionProvider, ThemeProvider } from "~/components/providers";
 
 const inter = Inter({
@@ -18,15 +16,14 @@ const RootLayout = ({ children }: { children: React.ReactNode }) => (
   <html lang="en" className="h-full">
     <body
       className={cn(
-        "relative grid h-full min-h-screen overflow-hidden font-sans antialiased lg:grid-cols-6",
+        "relative h-full min-h-screen overflow-hidden font-sans antialiased",
         inter.variable,
       )}
     >
       <TRPCReactProvider>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
           <SessionProvider>
-            <Sidebar playlists={collections} className="hidden lg:block" />
-            <main className="relative col-span-4 flex min-h-screen flex-col lg:col-span-5 lg:border-l">
+            <main className="relative mx-auto min-h-screen max-w-screen-xl">
               <div className="flex-1 flex-grow">{children}</div>
             </main>
             <Toaster />

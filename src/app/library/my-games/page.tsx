@@ -1,4 +1,3 @@
-import { Separator } from "~/components/ui/separator";
 import { ScrollArea } from "~/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { MyGamesContent } from "~/components/my-games";
@@ -34,12 +33,9 @@ const Page = async () => (
         </div>
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-semibold tracking-tight">
-              My Games Library
-            </h2>
+            <h1 className="text-3xl font-semibold tracking-tight">Library</h1>
           </div>
         </div>
-        <Separator className="my-4" />
         {myGamesContentStatuses.map((status, idx) => (
           <TabsContent key={idx} value={status.toLowerCase()}>
             <MyGamesContent status={status} />

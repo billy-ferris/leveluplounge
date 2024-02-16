@@ -11,7 +11,7 @@ interface MyGamesContentProps {
 }
 
 export const MyGamesContent: FC<MyGamesContentProps> = async ({ status }) => {
-  const games = await api.games.getUserGamesByStatus.query(status);
+  const games = await api.games.getUserGamesByStatus.query({ status });
 
   // TODO: empty state
   return (
